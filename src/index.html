@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https:; img-src 'self' data:"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astra — sua assistente</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="Astra início">
+          <span class="brand-mark">A</span>
+          <span>astra<span class="brand-dot">.</span></span>
+        </a>
+        <button class="new-chat" id="new-chat"><span>＋</span> Nova conversa</button>
+        <button class="tv-link" id="open-tv"><span>▣</span> Conectar à TV</button>
+        <div class="side-caption">ASSISTENTE PESSOAL</div>
+        <div class="side-note">
+          <span class="status-dot"></span>
+          <span>Astra está pronta</span>
+        </div>
+        <div class="sidebar-bottom">
+          <div class="privacy-note"><span>◈</span> Sua chave fica protegida<br />no seu computador.</div>
+          <button class="settings-link" id="open-settings"><span>⚙</span> Configurações</button>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div class="connection"><span class="status-dot"></span><span id="connection-label">Pronta para conversar</span></div>
+          <button class="icon-button settings-mobile" id="open-settings-mobile" aria-label="Configurações">⚙</button>
+        </header>
+
+        <section class="conversation" id="conversation" aria-live="polite">
+          <div class="orb-wrap" id="orb-wrap" data-state="idle" aria-hidden="true">
+            <canvas class="orb-lines" id="orb-lines"></canvas>
+            <div class="orb-halo"></div>
+            <div class="orb">
+              <div class="orb-shine"></div>
+              <div class="orb-core"></div>
+            </div>
+            <div class="orb-ring"></div>
+          </div>
+          <div class="welcome" id="welcome">
+            <p class="eyebrow">SUA ASSISTENTE, DO SEU JEITO</p>
+            <h1>Oi, eu sou a <span>Astra.</span></h1>
+            <p class="welcome-copy">Estou aqui para conversar, ajudar com ideias<br />ou simplesmente fazer companhia.</p>
+            <div class="suggestions">
+              <button class="suggestion" data-prompt="Me ajude a organizar meu dia">✳ <span>Organizar meu dia</span></button>
+              <button class="suggestion" data-prompt="Me conte uma curiosidade interessante">✧ <span>Me conte uma curiosidade</span></button>
+              <button class="suggestion" data-prompt="Me ajude a ter uma ideia criativa">⌁ <span>Ter uma ideia criativa</span></button>
+            </div>
+          </div>
+          <div class="messages" id="messages"></div>
+        </section>
+
+        <footer class="composer-area">
+          <form class="composer" id="composer">
+            <textarea id="message-input" rows="1" placeholder="Escreva uma mensagem..." aria-label="Escreva uma mensagem"></textarea>
+            <div class="composer-actions">
+              <button class="voice-button" id="voice-button" type="button" aria-label="Falar com Astra" title="Falar com Astra">◉</button>
+              <button class="send-button" id="send-button" type="submit" aria-label="Enviar mensagem">↑</button>
+            </div>
+          </form>
+          <p class="disclaimer">A Astra pode cometer erros. Confira informações importantes.</p>
+        </footer>
+      </main>
+    </div>
+
+    <div class="modal-backdrop hidden" id="voice-permission-modal" role="presentation">
+      <section class="permission-card" role="dialog" aria-modal="true" aria-labelledby="voice-permission-title">
+        <button class="modal-close" id="close-voice-permission" type="button" aria-label="Fechar">×</button>
+        <p class="eyebrow">CONVERSA POR VOZ</p>
+        <h2 id="voice-permission-title">Permitir acesso ao microfone?</h2>
+        <p class="settings-description">A Astra precisa do microfone para reconhecer sua fala enquanto você conversa. O app não grava nem armazena o áudio. As respostas da Astra serão faladas em voz alta.</p>
+        <p class="permission-error" id="voice-permission-error" role="alert"></p>
+        <div class="settings-actions">
+          <button class="test-connection" id="decline-voice-permission" type="button">Agora não</button>
+          <button class="save-settings" id="allow-voice-permission" type="button">Permitir microfone</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="settings-modal" role="presentation">
+      <section class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <button class="modal-close" id="close-settings" aria-label="Fechar">×</button>
+        <p class="eyebrow">PERSONALIZE SUA EXPERIÊNCIA</p>
+        <h2 id="settings-title">Conectar sua IA</h2>
+        <p class="settings-description">A opção local usa o Ollama como API neste computador: não precisa de chave e suas mensagens não são enviadas a um serviço externo.</p>
+        <form id="settings-form">
+          <label for="provider">Onde a IA será executada</label>
+          <select id="provider">
+            <option value="ollama">Neste computador (Ollama)</option>
+            <option value="openai">API compatível com OpenAI</option>
+          </select>
+          <label id="endpoint-label" for="endpoint">Endereço do Ollama</label>
+          <input id="endpoint" type="url" placeholder="http://127.0.0.1:11434" required />
+          <label for="model">Modelo</label>
+          <input id="model" type="text" placeholder="qwen2.5:3b" required />
+          <div id="api-key-fields" class="provider-fields hidden">
+            <label for="api-key">Chave de API <span id="key-status" class="key-status"></span></label>
+            <input id="api-key" type="password" placeholder="Cole sua chave de API" autocomplete="off" />
+          </div>
+          <label class="clear-key"><input id="clear-key" type="checkbox" /> Remover a chave salva</label>
+          <p class="settings-error" id="settings-error" role="alert"></p>
+          <p class="connection-test" id="connection-test" role="status" aria-live="polite"></p>
+          <div class="settings-actions">
+            <button class="test-connection" id="test-connection" type="button">Testar conexão</button>
+            <button class="save-settings" type="submit">Salvar configurações</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="tv-modal" role="presentation">
+      <section class="settings-card tv-card" role="dialog" aria-modal="true" aria-labelledby="tv-title">
+        <button class="modal-close" id="close-tv" aria-label="Fechar">×</button>
+        <p class="eyebrow">CONTROLE LOCAL</p>
+        <h2 id="tv-title">Conectar à LG webOS</h2>
+        <p class="settings-description">A busca envia solicitações SSDP pela rede local. Se o roteador bloquear a descoberta, informe o IP da TV. Aprove o pedido de pareamento na tela dela.</p>
+        <button class="test-connection tv-discover" id="tv-discover" type="button">Buscar TVs na rede local</button>
+        <p class="settings-error" id="tv-error" role="alert"></p>
+        <p class="connection-test" id="tv-status" role="status" aria-live="polite"></p>
+        <div class="tv-devices" id="tv-devices"></div>
+        <div class="tv-manual-connect">
+          <label for="tv-manual-ip">Ou conecte pelo IP da TV</label>
+          <div class="tv-manual-row">
+            <input id="tv-manual-ip" type="text" inputmode="decimal" placeholder="Ex.: 192.168.1.50" />
+            <button class="test-connection" id="tv-connect-ip" type="button">Conectar</button>
+          </div>
+        </div>
+        <div class="provider-fields hidden" id="tv-controls">
+          <label for="tv-selected">TV pareada</label>
+          <select id="tv-selected"></select>
+          <div class="tv-app-actions">
+            <label for="tv-apps">Aplicativo instalado</label>
+            <button class="test-connection tv-refresh" id="tv-refresh-apps" type="button">Atualizar lista</button>
+            <select id="tv-apps"></select>
+            <button class="save-settings" id="tv-open-app" type="button">Abrir aplicativo</button>
+          </div>
+          <button class="test-connection tv-spotify" id="tv-spotify-play" type="button">Abrir Spotify e dar play</button>
+          <div class="tv-media-actions">
+            <button class="test-connection" id="tv-play" type="button">▶ Reproduzir</button>
+            <button class="test-connection" id="tv-pause" type="button">Ⅱ Pausar</button>
+          </div>
+          <label for="tv-text">Enviar texto para o campo selecionado na TV</label>
+          <input id="tv-text" type="text" maxlength="200" placeholder="Ex.: nome da música na busca do Spotify" />
+          <div class="tv-media-actions">
+            <button class="test-connection" id="tv-send-text" type="button">Enviar texto</button>
+            <button class="test-connection" id="tv-enter" type="button">Confirmar / Enter</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

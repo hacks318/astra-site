@@ -1,0 +1,40 @@
+{
+  "name": "astra-assistant",
+  "version": "1.0.8",
+  "description": "Assistente de IA para desktop com voz e texto.",
+  "main": "src/main.js",
+  "author": "Astra",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^38.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.astra.assistant",
+    "productName": "Astra",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}
