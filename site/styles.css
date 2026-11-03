@@ -83,6 +83,7 @@ h2 { margin: 0; font-size: clamp(28px, 4vw, 38px); font-weight: 600; letter-spac
 .android-badge { flex: 0 0 auto; padding: 6px 8px; border: 1px solid #82d2ff45; border-radius: 6px; background: #28638a30; color: #9cdeff; font-size: 9px; font-weight: 750; letter-spacing: 1px; }
 .android-status strong { color: #e7e3f3; font-size: 12px; }
 .android-status p { margin: 6px 0 0; color: #9695a9; font-size: 11px; line-height: 1.7; }
+.android-download { margin-top: 12px; }
 body[data-platform="android"] .windows-download, body[data-platform="android"] .download-version { display: none; }
 .install-steps { display: grid; gap: 12px; }
 .install-steps div { display: flex; min-height: 55px; align-items: center; gap: 14px; padding: 12px; border: 1px solid #282638; border-radius: 9px; background: #0c0d15a6; }

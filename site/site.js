@@ -24,6 +24,19 @@ function updatePrimaryDownload(useEnglish) {
     return;
   }
 
+  if (platform === "android") {
+    primaryDownload.href = "./downloads/Astra-Android-debug.apk";
+    primaryDownload.download = "Astra-Android-debug.apk";
+    primaryDownloadLabel.textContent = useEnglish
+      ? "Download Android APK"
+      : "Baixar APK Android";
+    primaryDownload.setAttribute(
+      "aria-label",
+      useEnglish ? "Download Astra for Android" : "Baixar Astra para Android"
+    );
+    return;
+  }
+
   primaryDownload.href = "#download";
   primaryDownload.removeAttribute("download");
   primaryDownloadLabel.textContent = useEnglish ? "Download options" : "Opções de download";
