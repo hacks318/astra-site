@@ -78,6 +78,7 @@ h2 { margin: 0; font-size: clamp(28px, 4vw, 38px); font-weight: 600; letter-spac
 .download-copy h2 { max-width: 490px; font-size: 32px; }
 .download-copy > p:not(.eyebrow) { max-width: 510px; margin: 14px 0 22px; color: #a09fb1; font-size: 12px; line-height: 1.8; }
 .download-version { display: block; margin-top: 12px; }
+.mobile-download-note { margin: 16px 0 0 !important; color: #9695a9 !important; font-size: 11px !important; }
 .install-steps { display: grid; gap: 12px; }
 .install-steps div { display: flex; min-height: 55px; align-items: center; gap: 14px; padding: 12px; border: 1px solid #282638; border-radius: 9px; background: #0c0d15a6; }
 .install-steps span { color: #bd9bff; font-size: 11px; font-weight: 700; }
@@ -114,6 +115,7 @@ h2 { margin: 0; font-size: clamp(28px, 4vw, 38px); font-weight: 600; letter-spac
   .feature-card { min-height: 0; }
   .download-panel { grid-template-columns: 1fr; gap: 28px; padding: 25px 20px; }
   .download-copy h2 { font-size: 28px; }
+  .download-copy .download-button { width: 100%; }
   .footer { flex-wrap: wrap; justify-content: space-between; padding: 18px 0; }
   .footer p { order: 1; width: 100%; margin: 0; }
 }
