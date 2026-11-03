@@ -15,8 +15,8 @@ function updatePrimaryDownload(useEnglish) {
     primaryDownload.href = "./downloads/Astra-Setup-1.0.8.exe";
     primaryDownload.download = "Astra-Setup-1.0.8.exe";
     primaryDownloadLabel.textContent = useEnglish
-      ? "Download for Windows"
-      : "Download para Windows";
+      ? "Download Astra AI"
+      : "Download Astra IA";
     primaryDownload.setAttribute(
       "aria-label",
       useEnglish ? "Download Astra for Windows" : "Baixar Astra para Windows"
