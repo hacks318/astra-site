@@ -6,6 +6,7 @@ private enum AstraStyle {
     static let background = Color(red: 8.0 / 255, green: 10.0 / 255, blue: 18.0 / 255)
     static let panel = Color(red: 17.0 / 255, green: 18.0 / 255, blue: 28.0 / 255)
     static let purple = Color(red: 180.0 / 255, green: 147.0 / 255, blue: 250.0 / 255)
+    static let blue = Color(red: 115.0 / 255, green: 204.0 / 255, blue: 1)
     static let muted = Color(red: 153.0 / 255, green: 152.0 / 255, blue: 170.0 / 255)
 }
 
@@ -69,17 +70,34 @@ private struct AstraView: View {
             header
             Divider().overlay(Color.white.opacity(0.08))
 
-            Toggle(isOn: $educationMode) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Modo Educação").font(.subheadline.weight(.semibold))
-                    Text("Segurança digital defensiva").font(.caption).foregroundStyle(AstraStyle.muted)
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color(red: 139.0 / 255, green: 216.0 / 255, blue: 168.0 / 255))
+                    .frame(width: 7, height: 7)
+                Text("Pronta para conversar")
+                    .font(.caption)
+                    .foregroundStyle(AstraStyle.muted)
+                Spacer()
+                Button {
+                    educationMode.toggle()
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("◇")
+                        Text(educationMode ? "Educação ativa" : "Modo Educação")
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(educationMode ? AstraStyle.blue : Color(red: 188.0 / 255, green: 184.0 / 255, blue: 202.0 / 255))
+                    .padding(.horizontal, 10)
+                    .frame(height: 34)
+                    .background(educationMode ? Color.blue.opacity(0.12) : AstraStyle.panel)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 9)
+                            .stroke(educationMode ? AstraStyle.blue.opacity(0.55) : Color(red: 52.0 / 255, green: 48.0 / 255, blue: 68.0 / 255), lineWidth: 1)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
                 }
             }
-            .tint(AstraStyle.purple)
-            .padding(14)
-            .background(educationMode ? Color.blue.opacity(0.12) : AstraStyle.panel)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .padding(.horizontal, 18)
+            .padding(.horizontal, 20)
             .padding(.vertical, 12)
 
             if let errorMessage {
@@ -132,6 +150,17 @@ private struct AstraView: View {
                 .scaledToFit()
                 .frame(width: 132, height: 40, alignment: .leading)
             Spacer()
+            Button {
+                messages.removeAll()
+                errorMessage = nil
+            } label: {
+                Image(systemName: "plus.message")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(AstraStyle.purple)
+                    .frame(width: 38, height: 42)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Nova conversa")
             Button { showingSettings = true } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 19, weight: .medium))
@@ -149,75 +178,152 @@ private struct AstraView: View {
     private var welcome: some View {
         VStack(spacing: 14) {
             Spacer()
-            Image("AstraLogo").resizable().scaledToFit().frame(width: 190)
-            Text(educationMode ? "Aprenda a se proteger" : "Sua assistente")
-                .font(.title3.weight(.semibold))
+            AstraOrb()
+                .frame(width: 190, height: 190)
+            Text(educationMode ? "APRENDER A SE PROTEGER" : "SUA ASSISTENTE, DO SEU JEITO")
+                .font(.system(size: 9, weight: .bold, design: .default))
+                .tracking(1.8)
+                .foregroundStyle(educationMode ? AstraStyle.blue : Color(red: 155.0 / 255, green: 139.0 / 255, blue: 189.0 / 255))
+            Text(welcomeTitle)
+                .font(.system(size: 28, weight: .semibold))
+                .multilineTextAlignment(.center)
             Text(educationMode
-                 ? "Pergunte sobre privacidade, golpes e segurança digital."
-                 : "Converse por texto com Astra. Configure seu provedor de IA nas opções.")
+                 ? "Aprenda a reconhecer golpes, proteger suas contas e ensinar segurança digital com responsabilidade."
+                 : "Estou aqui para conversar, ajudar com ideias ou simplesmente fazer companhia.")
                 .font(.subheadline)
                 .foregroundStyle(AstraStyle.muted)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 310)
-            if educationMode {
-                Button("Criar atividade segura") {
-                    send("Crie uma atividade fictícia para ensinar alunos a reconhecer phishing e proteger suas contas.")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 9) {
+                    ForEach(Array(suggestions.enumerated()), id: \.offset) { _, suggestion in
+                        Button {
+                            send(suggestion.prompt)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(educationMode ? "◇" : "✳")
+                                Text(suggestion.title)
+                            }
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(educationMode ? AstraStyle.blue : AstraStyle.purple)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(educationMode ? Color(red: 17.0 / 255, green: 28.0 / 255, blue: 40.0 / 255) : Color(red: 16.0 / 255, green: 17.0 / 255, blue: 27.0 / 255))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(educationMode ? Color(red: 53.0 / 255, green: 80.0 / 255, blue: 106.0 / 255) : Color(red: 40.0 / 255, green: 38.0 / 255, blue: 56.0 / 255), lineWidth: 1)
+                                }
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
                 }
-                .buttonStyle(AstraButtonStyle())
+                .padding(.horizontal, 20)
             }
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 22)
+        .padding(.vertical, 6)
     }
 
     private var composer: some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            TextField("Escreva sua mensagem...", text: $input, axis: .vertical)
-                .lineLimit(1...5)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(AstraStyle.panel)
-                .clipShape(RoundedRectangle(cornerRadius: 13))
-                .disabled(isSending)
-                .onSubmit { send(input) }
+        VStack(spacing: 0) {
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField("Escreva uma mensagem...", text: $input, axis: .vertical)
+                    .lineLimit(1...5)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(AstraStyle.panel)
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
+                    .disabled(isSending)
+                    .onSubmit { send(input) }
 
-            Button { send(input) } label: {
-                Group {
-                    if isSending {
-                        ProgressView().tint(Color.black)
-                    } else {
-                        Image(systemName: "arrow.up").font(.system(size: 16, weight: .bold))
+                Button { send(input) } label: {
+                    Group {
+                        if isSending {
+                            ProgressView().tint(Color.black)
+                        } else {
+                            Image(systemName: "arrow.up").font(.system(size: 16, weight: .bold))
+                        }
                     }
+                    .foregroundStyle(Color.black)
+                    .frame(width: 46, height: 46)
+                    .background(AstraStyle.purple)
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
                 }
-                .foregroundStyle(Color.black)
-                .frame(width: 46, height: 46)
-                .background(AstraStyle.purple)
-                .clipShape(RoundedRectangle(cornerRadius: 13))
+                .disabled(isSending || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityLabel("Enviar mensagem")
             }
-            .disabled(isSending || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityLabel("Enviar mensagem")
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+            .background(AstraStyle.background)
+
+            Text("A Astra pode cometer erros. Confira informações importantes.")
+                .font(.system(size: 10))
+                .foregroundStyle(AstraStyle.muted)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 10)
+                .background(AstraStyle.background)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
-        .background(AstraStyle.background)
     }
 
     private func messageBubble(_ message: ChatMessage) -> some View {
         HStack {
-            if message.role == "assistant" { Spacer(minLength: 38) }
+            if message.role == "assistant" {
+                Image("AstraMark")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(5)
+                    .frame(width: 27, height: 27)
+                    .background(Color(red: 39.0 / 255, green: 26.0 / 255, blue: 59.0 / 255))
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+            } else {
+                Spacer(minLength: 38)
+            }
             Text(message.content)
                 .font(.subheadline)
                 .lineSpacing(4)
                 .foregroundStyle(Color(red: 226.0 / 255, green: 223.0 / 255, blue: 236.0 / 255))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 11)
-                .background(message.role == "user" ? Color(red: 42.0 / 255, green: 34.0 / 255, blue: 61.0 / 255) : AstraStyle.panel)
-                .clipShape(RoundedRectangle(cornerRadius: 15))
-            if message.role == "user" { Spacer(minLength: 38) }
+                .frame(maxWidth: 320, alignment: .leading)
+                .background(message.role == "user" ? Color(red: 23.0 / 255, green: 22.0 / 255, blue: 36.0 / 255) : AstraStyle.panel)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(message.role == "user" ? Color(red: 51.0 / 255, green: 48.0 / 255, blue: 71.0 / 255) : Color(red: 36.0 / 255, green: 36.0 / 255, blue: 50.0 / 255), lineWidth: 1)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            if message.role == "assistant" {
+                Spacer(minLength: 26)
+            }
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, 20)
+    }
+
+    private var suggestions: [(title: String, prompt: String)] {
+        if educationMode {
+            return [
+                ("Reconhecer phishing", "Explique como reconhecer uma tentativa de phishing com exemplos fictícios e dicas seguras para alunos."),
+                ("Preparar uma aula", "Monte um plano de aula de 30 minutos sobre segurança de senhas e autenticação em duas etapas para adolescentes, com objetivo, atividade e perguntas de revisão."),
+                ("Fazer um quiz", "Crie um quiz de 5 perguntas para alunos sobre privacidade e segurança digital. Use situações fictícias e inclua o gabarito explicado no final.")
+            ]
+        }
+
+        private var welcomeTitle: AttributedString {
+            if educationMode {
+                return AttributedString("Segurança digital\nsem mistério.")
+            }
+            var title = AttributedString("Oi, eu sou a Astra.")
+            if let range = title.range(of: "Astra.") {
+                title[range].foregroundColor = AstraStyle.purple
+            }
+            return title
+        }
+        return [
+            ("Organizar meu dia", "Me ajude a organizar meu dia"),
+            ("Uma curiosidade", "Me conte uma curiosidade interessante"),
+            ("Uma ideia criativa", "Me ajude a ter uma ideia criativa")
+        ]
     }
 
     private func send(_ text: String) {
@@ -242,6 +348,58 @@ private struct AstraView: View {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+}
+
+private struct AstraOrb: View {
+    @State private var isPulsing = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.purple.opacity(0.11))
+                .frame(width: 188, height: 188)
+                .blur(radius: 12)
+            Circle()
+                .fill(Color.purple.opacity(0.07))
+                .frame(width: 158, height: 158)
+                .overlay {
+                    Circle()
+                        .stroke(Color(red: 190.0 / 255, green: 155.0 / 255, blue: 1).opacity(0.42), lineWidth: 1)
+                }
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color(red: 243.0 / 255, green: 217.0 / 255, blue: 1),
+                            Color(red: 205.0 / 255, green: 161.0 / 255, blue: 1),
+                            Color(red: 153.0 / 255, green: 102.0 / 255, blue: 251.0 / 255),
+                            Color(red: 88.0 / 255, green: 52.0 / 255, blue: 174.0 / 255),
+                            Color(red: 17.0 / 255, green: 16.0 / 255, blue: 29.0 / 255)
+                        ],
+                        center: UnitPoint(x: 0.34, y: 0.29),
+                        startRadius: 2,
+                        endRadius: 65
+                    )
+                )
+                .frame(width: 112, height: 112)
+                .overlay(alignment: .topLeading) {
+                    Ellipse()
+                        .fill(Color.white.opacity(0.42))
+                        .frame(width: 34, height: 14)
+                        .blur(radius: 8)
+                        .offset(x: 24, y: 18)
+                }
+                .shadow(color: AstraStyle.purple.opacity(0.38), radius: 25)
+                .scaleEffect(isPulsing ? 1.06 : 0.96)
+        }
+        .frame(width: 190, height: 190)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+                isPulsing = true
+            }
+        }
+        .accessibilityLabel("Esfera luminosa da Astra")
     }
 }
 

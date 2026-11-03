@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -39,11 +41,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -56,9 +62,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -82,6 +92,7 @@ private val Background = Color(0xFF080A12)
 private val Panel = Color(0xFF11121C)
 private val Purple = Color(0xFFB493FA)
 private val Muted = Color(0xFF9998AA)
+private val Blue = Color(0xFF73CCFF)
 private data class ChatMessage(val role: String, val content: String)
 private data class AiSettings(
     val provider: String,
@@ -161,8 +172,23 @@ private fun AstraScreen(preferences: android.content.SharedPreferences) {
             }
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("astra.", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    buildAnnotatedString {
+                        append("astra")
+                        withStyle(SpanStyle(color = Purple)) { append(".") }
+                    },
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
                 Text(if (educationMode) "Aprender a se proteger" else "Sua assistente", color = Muted, fontSize = 11.sp)
+            }
+            TextButton(
+                onClick = {
+                    messages.clear()
+                    error = ""
+                }
+            ) {
+                Text("＋", color = Purple, fontSize = 21.sp)
             }
             TextButton(onClick = { showSettings = true }) {
                 Text("⚙", color = Muted, fontSize = 20.sp)
@@ -173,25 +199,34 @@ private fun AstraScreen(preferences: android.content.SharedPreferences) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 13.dp)
-                .background(
-                    if (educationMode) Color(0xFF142331) else Panel,
-                    RoundedCornerShape(13.dp)
-                )
-                .padding(horizontal = 14.dp, vertical = 11.dp),
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Modo Educação", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                Text("Segurança digital defensiva", color = Muted, fontSize = 11.sp)
-            }
-            Switch(
-                checked = educationMode,
-                onCheckedChange = {
-                    educationMode = it
-                    preferences.edit().putBoolean("education-mode", it).apply()
-                }
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .background(Color(0xFF8BD8A8), CircleShape)
             )
+            Spacer(Modifier.width(8.dp))
+            Text("Pronta para conversar", color = Muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            OutlinedButton(
+                onClick = {
+                    educationMode = !educationMode
+                    preferences.edit().putBoolean("education-mode", educationMode).apply()
+                },
+                shape = RoundedCornerShape(9.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (educationMode) Blue.copy(alpha = 0.65f) else Color(0xFF343044)
+                ),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    if (educationMode) "◇ Educação ativa" else "◇ Modo Educação",
+                    color = if (educationMode) Blue else Color(0xFFBCB8CA),
+                    fontSize = 11.sp
+                )
+            }
         }
 
         if (messages.isEmpty()) {
@@ -203,68 +238,61 @@ private fun AstraScreen(preferences: android.content.SharedPreferences) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(92.dp)
-                        .background(
-                            Brush.radialGradient(listOf(Color(0xFFCEB6FF), Color(0xFF6035BD), Color(0xFF19132B))),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.astra_mark),
-                        contentDescription = null,
-                        modifier = Modifier.size(54.dp)
-                    )
-                }
-                Spacer(Modifier.height(20.dp))
+                OrbVisual(modifier = Modifier.size(190.dp))
                 Text(
-                    if (educationMode) "Segurança digital\nsem mistério."
-                    else "Oi, eu sou a Astra.",
+                    if (educationMode) "APRENDER A SE PROTEGER" else "SUA ASSISTENTE, DO SEU JEITO",
+                    color = if (educationMode) Blue else Color(0xFF9B8BBD),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.8.sp
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    if (educationMode) {
+                        buildAnnotatedString { append("Segurança digital\nsem mistério.") }
+                    } else {
+                        buildAnnotatedString {
+                            append("Oi, eu sou a ")
+                            withStyle(SpanStyle(color = Color(0xFFC19CFF))) { append("Astra.") }
+                        }
+                    },
                     textAlign = TextAlign.Center,
-                    fontSize = 27.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
                     lineHeight = 32.sp
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     if (educationMode) "Aprenda a identificar golpes e proteger suas contas."
-                    else "Converse, aprenda e tire suas ideias do papel.",
+                    else "Estou aqui para conversar, ajudar com ideias ou simplesmente fazer companhia.",
                     color = Muted,
                     textAlign = TextAlign.Center,
                     fontSize = 13.sp,
-                    lineHeight = 20.sp
+                    lineHeight = 20.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
-                Spacer(Modifier.height(24.dp))
-                if (educationMode) {
-                    SuggestionButton("Reconhecer uma mensagem de phishing") {
-                        sendEducationPrompt(
-                            "Explique como reconhecer uma tentativa de phishing com exemplos fictícios e dicas seguras para alunos.",
-                            settings, messages, true, { isSending = it }, { error = it }, scope
-                        )
-                    }
-                    Spacer(Modifier.height(9.dp))
-                    SuggestionButton("Preparar uma aula de segurança digital") {
-                        sendEducationPrompt(
-                            "Monte um plano de aula de 30 minutos sobre segurança de senhas e autenticação em duas etapas para adolescentes, com objetivo, atividade e perguntas de revisão.",
-                            settings, messages, true, { isSending = it }, { error = it }, scope
-                        )
-                    }
-                    Spacer(Modifier.height(9.dp))
-                    SuggestionButton("Criar um quiz seguro") {
-                        sendEducationPrompt(
-                            "Crie um quiz de 5 perguntas para alunos sobre privacidade e segurança digital. Use situações fictícias e inclua o gabarito explicado no final.",
-                            settings, messages, true, { isSending = it }, { error = it }, scope
-                        )
-                    }
+                Spacer(Modifier.height(20.dp))
+                val suggestions = if (educationMode) {
+                    listOf(
+                        "Reconhecer phishing" to "Explique como reconhecer uma tentativa de phishing com exemplos fictícios e dicas seguras para alunos.",
+                        "Preparar uma aula" to "Monte um plano de aula de 30 minutos sobre segurança de senhas e autenticação em duas etapas para adolescentes, com objetivo, atividade e perguntas de revisão.",
+                        "Criar um quiz" to "Crie um quiz de 5 perguntas para alunos sobre privacidade e segurança digital. Use situações fictícias e inclua o gabarito explicado no final."
+                    )
                 } else {
-                    SuggestionButton("Me ajude a organizar meu dia") {
-                        input = "Me ajude a organizar meu dia"
-                    }
-                    Spacer(Modifier.height(9.dp))
-                    SuggestionButton("Me conte uma curiosidade") {
-                        input = "Me conte uma curiosidade interessante"
+                    listOf(
+                        "Organizar meu dia" to "Me ajude a organizar meu dia",
+                        "Uma curiosidade" to "Me conte uma curiosidade interessante",
+                        "Uma ideia criativa" to "Me ajude a ter uma ideia criativa"
+                    )
+                }
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 2.dp)
+                ) {
+                    items(suggestions) { (label, prompt) ->
+                        SuggestionChip(label, educationMode) {
+                            sendMessage(prompt, settings, messages, educationMode, { isSending = it }, { error = it }, scope)
+                        }
                     }
                 }
             }
@@ -373,14 +401,21 @@ private fun AstraScreen(preferences: android.content.SharedPreferences) {
 }
 
 @Composable
-private fun SuggestionButton(label: String, onClick: () -> Unit) {
+private fun SuggestionChip(label: String, educationMode: Boolean, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD8CCF2))
+        shape = RoundedCornerShape(8.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (educationMode) Color(0xFF35506A) else Color(0xFF282638)
+        ),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 9.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (educationMode) Color(0xFF111C28) else Color(0xFF10111B),
+            contentColor = if (educationMode) Blue else Purple
+        )
     ) {
-        Text(label, fontSize = 12.sp, textAlign = TextAlign.Center)
+        Text(label, fontSize = 11.sp, textAlign = TextAlign.Center, maxLines = 1)
     }
 }
 
@@ -389,17 +424,37 @@ private fun MessageBubble(message: ChatMessage) {
     val isUser = message.role == "user"
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Top
     ) {
+        if (!isUser) {
+            Box(
+                modifier = Modifier
+                    .size(27.dp)
+                    .background(Color(0xFF271A3B), RoundedCornerShape(9.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.astra_mark),
+                    contentDescription = "Astra",
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+        }
         Surface(
-            color = if (isUser) Color(0xFF242038) else Panel,
-            shape = RoundedCornerShape(
-                topStart = 15.dp,
-                topEnd = 15.dp,
-                bottomEnd = if (isUser) 4.dp else 15.dp,
-                bottomStart = if (isUser) 15.dp else 4.dp
+            color = if (isUser) Color(0xFF171624) else Panel,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (isUser) Color(0xFF333047) else Color(0xFF242432)
             ),
-            modifier = Modifier.fillMaxWidth(0.88f)
+            shape = RoundedCornerShape(
+                topStart = if (isUser) 15.dp else 4.dp,
+                topEnd = 15.dp,
+                bottomEnd = 15.dp,
+                bottomStart = if (isUser) 15.dp else 12.dp
+            ),
+            modifier = Modifier.fillMaxWidth(if (isUser) 0.88f else 0.8f)
         ) {
             Text(
                 message.content,
@@ -407,6 +462,50 @@ private fun MessageBubble(message: ChatMessage) {
                 color = Color(0xFFE2DFEC),
                 fontSize = 13.sp,
                 lineHeight = 20.sp
+            )
+        }
+    }
+
+    @Composable
+    private fun OrbVisual(modifier: Modifier = Modifier) {
+        val transition = rememberInfiniteTransition(label = "astra-orb")
+        val scale by transition.animateFloat(
+            initialValue = 0.94f,
+            targetValue = 1.06f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1800),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "orb-pulse"
+        )
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(0.74f)
+                    .background(Color(0x2E733DFF), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(0.67f)
+                    .border(1.dp, Color(0x5CBE9BFF), CircleShape)
+                    .background(Color(0x14A074FF), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(0.4f)
+                    .graphicsLayer(scaleX = scale, scaleY = scale)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                Color(0xFFF3D9FF),
+                                Color(0xFFCDA1FF),
+                                Color(0xFF9966FB),
+                                Color(0xFF5834AE),
+                                Color(0xFF11101D)
+                            )
+                        ),
+                        CircleShape
+                    )
             )
         }
     }
