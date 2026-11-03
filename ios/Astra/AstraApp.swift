@@ -282,6 +282,9 @@ private struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("Provedor de IA") {
+                    Text("A Astra não inclui uma chave de API. Para usar uma API compatível, informe seu endereço HTTPS e sua chave. Ollama pode usar o servidor local do computador.")
+                        .font(.footnote)
+                        .foregroundStyle(AstraStyle.muted)
                     Picker("Provedor", selection: $draft.provider) {
                         ForEach(AIProvider.allCases) { provider in
                             Text(provider.title).tag(provider)

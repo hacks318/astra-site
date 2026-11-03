@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -151,7 +153,11 @@ private fun AstraScreen(preferences: android.content.SharedPreferences) {
                     .background(Color(0xFF271A3B), RoundedCornerShape(13.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("A", color = Purple, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                Image(
+                    painter = painterResource(R.drawable.astra_mark),
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp)
+                )
             }
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -206,7 +212,11 @@ private fun AstraScreen(preferences: android.content.SharedPreferences) {
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("A", color = Color.White, fontSize = 37.sp, fontWeight = FontWeight.Light)
+                    Image(
+                        painter = painterResource(R.drawable.astra_mark),
+                        contentDescription = null,
+                        modifier = Modifier.size(54.dp)
+                    )
                 }
                 Spacer(Modifier.height(20.dp))
                 Text(
@@ -423,7 +433,7 @@ private fun SettingsDialog(
         title = { Text("Conectar sua IA") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("As mensagens são enviadas ao provedor configurado. Não inclua dados pessoais.", color = Muted, fontSize = 12.sp)
+                Text("A Astra não inclui uma chave de API. Para usar uma API, informe seu endereço HTTPS e sua chave. Ollama pode usar o servidor local do computador.", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterButton("Ollama", isOllama) {
                         provider = "ollama"

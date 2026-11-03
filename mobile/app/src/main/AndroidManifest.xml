@@ -3,7 +3,9 @@
 
     <application
         android:allowBackup="false"
+        android:icon="@drawable/astra_app_icon"
         android:label="Astra"
+        android:roundIcon="@drawable/astra_app_icon"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="true">
         <activity
