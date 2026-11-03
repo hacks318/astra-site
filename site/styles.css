@@ -12,7 +12,8 @@
 
 * { box-sizing: border-box; }
 html { min-width: 320px; scroll-behavior: smooth; }
-body { margin: 0; background: radial-gradient(ellipse at 74% 8%, #2415423b, transparent 36%), #080a12; }
+body { position: relative; isolation: isolate; margin: 0; background: radial-gradient(ellipse at 74% 8%, #24154266, transparent 42%), radial-gradient(ellipse at 10% 54%, #10244a42, transparent 37%), #080a12; }
+body::before { position: fixed; z-index: -1; inset: 0; pointer-events: none; background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px), radial-gradient(ellipse at 50% 0%, #171a2b 0, transparent 65%); background-size: 56px 56px, 56px 56px, 100% 100%; mask-image: linear-gradient(to bottom, #000 0%, #0009 48%, transparent 90%); content: ""; }
 a { color: inherit; }
 button { font: inherit; }
 .topbar { width: min(1120px, calc(100% - 48px)); height: 82px; margin: auto; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ffffff0d; }
@@ -65,7 +66,7 @@ h1 { margin: 0; font-size: clamp(44px, 6vw, 68px); font-weight: 620; letter-spac
 h2 { margin: 0; font-size: clamp(28px, 4vw, 38px); font-weight: 600; letter-spacing: -1.5px; }
 .section-heading > p:last-child { margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
-.feature-card { min-height: 190px; padding: 23px; border: 1px solid #292638; border-radius: 12px; background: linear-gradient(145deg, #11121e, #0c0d16); }
+.feature-card { min-height: 190px; padding: 23px; border: 1px solid #ffffff19; border-radius: 14px; background: linear-gradient(145deg, #171827d9, #0c0d16e8); box-shadow: 0 16px 45px #00000020; backdrop-filter: blur(12px); }
 .feature-icon { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid; border-radius: 10px; font-size: 17px; }
 .feature-icon.purple { border-color: #986cf454; background: #653bab30; color: #c2a1ff; }
 .feature-icon.blue { border-color: #5eaff44d; background: #28638a30; color: #82d2ff; }
@@ -73,12 +74,16 @@ h2 { margin: 0; font-size: clamp(28px, 4vw, 38px); font-weight: 600; letter-spac
 .feature-icon.green { border-color: #72dba54d; background: #306b4930; color: #91e5b4; }
 .feature-card h3 { margin: 17px 0 7px; font-size: 15px; font-weight: 600; }
 .feature-card p { max-width: 420px; margin: 0; color: #9695a9; font-size: 11px; line-height: 1.8; }
-.download-panel { display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 44px; padding: 40px; border: 1px solid #41345f; border-radius: 16px; background: radial-gradient(ellipse at 15% 15%, #51357831, transparent 54%), #10111b; }
+.download-panel { display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 44px; padding: 40px; border: 1px solid #8e71cb55; border-radius: 18px; background: radial-gradient(ellipse at 15% 15%, #7752b933, transparent 54%), linear-gradient(145deg, #151624f2, #0c0d16f5); box-shadow: 0 24px 80px #00000045, inset 0 1px #ffffff12; backdrop-filter: blur(16px); }
 .download-copy .eyebrow { margin-bottom: 12px; }
 .download-copy h2 { max-width: 490px; font-size: 32px; }
 .download-copy > p:not(.eyebrow) { max-width: 510px; margin: 14px 0 22px; color: #a09fb1; font-size: 12px; line-height: 1.8; }
 .download-version { display: block; margin-top: 12px; }
-.mobile-download-note { margin: 16px 0 0 !important; color: #9695a9 !important; font-size: 11px !important; }
+.android-status { display: flex; align-items: flex-start; gap: 13px; max-width: 510px; margin-top: 26px; padding: 16px; border: 1px solid #ffffff1a; border-radius: 12px; background: #090b14a6; }
+.android-badge { flex: 0 0 auto; padding: 6px 8px; border: 1px solid #82d2ff45; border-radius: 6px; background: #28638a30; color: #9cdeff; font-size: 9px; font-weight: 750; letter-spacing: 1px; }
+.android-status strong { color: #e7e3f3; font-size: 12px; }
+.android-status p { margin: 6px 0 0; color: #9695a9; font-size: 11px; line-height: 1.7; }
+body[data-platform="android"] .windows-download, body[data-platform="android"] .download-version { display: none; }
 .install-steps { display: grid; gap: 12px; }
 .install-steps div { display: flex; min-height: 55px; align-items: center; gap: 14px; padding: 12px; border: 1px solid #282638; border-radius: 9px; background: #0c0d15a6; }
 .install-steps span { color: #bd9bff; font-size: 11px; font-weight: 700; }
@@ -116,6 +121,7 @@ h2 { margin: 0; font-size: clamp(28px, 4vw, 38px); font-weight: 600; letter-spac
   .download-panel { grid-template-columns: 1fr; gap: 28px; padding: 25px 20px; }
   .download-copy h2 { font-size: 28px; }
   .download-copy .download-button { width: 100%; }
+  .android-status { gap: 10px; padding: 13px; }
   .footer { flex-wrap: wrap; justify-content: space-between; padding: 18px 0; }
   .footer p { order: 1; width: 100%; margin: 0; }
 }

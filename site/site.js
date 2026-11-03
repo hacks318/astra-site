@@ -1,5 +1,37 @@
 const languageToggle = document.getElementById("language-toggle");
 const translations = [...document.querySelectorAll("[data-pt][data-en]")];
+const primaryDownload = document.getElementById("primary-download");
+const primaryDownloadLabel = document.getElementById("primary-download-label");
+const platform = /Windows/i.test(navigator.userAgent)
+  ? "windows"
+  : /Android/i.test(navigator.userAgent)
+    ? "android"
+    : "other";
+
+document.body.dataset.platform = platform;
+
+function updatePrimaryDownload(useEnglish) {
+  if (platform === "windows") {
+    primaryDownload.href = "./downloads/Astra-Setup-1.0.8.exe";
+    primaryDownload.download = "Astra-Setup-1.0.8.exe";
+    primaryDownloadLabel.textContent = useEnglish
+      ? "Download for Windows"
+      : "Download para Windows";
+    primaryDownload.setAttribute(
+      "aria-label",
+      useEnglish ? "Download Astra for Windows" : "Baixar Astra para Windows"
+    );
+    return;
+  }
+
+  primaryDownload.href = "#download";
+  primaryDownload.removeAttribute("download");
+  primaryDownloadLabel.textContent = useEnglish ? "Download options" : "Opções de download";
+  primaryDownload.setAttribute(
+    "aria-label",
+    useEnglish ? "View download options" : "Ver opções de download"
+  );
+}
 
 function setLanguage(language) {
   const useEnglish = language === "en";
@@ -15,6 +47,7 @@ function setLanguage(language) {
   document.title = useEnglish
     ? "Download Astra — your assistant, your way"
     : "Baixar Astra — sua assistente, do seu jeito";
+  updatePrimaryDownload(useEnglish);
   localStorage.setItem("astra-site-language", useEnglish ? "en" : "pt");
 }
 

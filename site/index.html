@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Baixe Astra, uma assistente para Windows com conversa por voz e texto, IA local opcional e controle de TVs LG webOS."
+      content="Baixe Astra para Windows: assistente com conversa por voz e texto, IA local opcional e controle de TVs LG webOS. A versão Android ainda não foi lançada."
     />
     <meta name="theme-color" content="#080a12" />
     <meta property="og:type" content="website" />
@@ -29,7 +29,7 @@
         <a href="#recursos" data-pt="Recursos" data-en="Features">Recursos</a>
         <a href="#perguntas" data-pt="Perguntas" data-en="FAQ">Perguntas</a>
         <button class="language-button" id="language-toggle" type="button" aria-label="Switch to English">EN</button>
-        <a class="nav-download" href="#download" data-pt="Instalar Astra" data-en="Install Astra">Instalar Astra</a>
+        <a class="nav-download" href="#download" data-pt="Download" data-en="Download">Download</a>
       </nav>
     </header>
 
@@ -40,9 +40,9 @@
           <h1 data-pt="Uma conversa.<br />Mil possibilidades." data-en="One conversation.<br />A world of possibilities.">Uma conversa.<br />Mil possibilidades.</h1>
           <p class="hero-description" data-pt="Conheça Astra: converse por mensagem ou voz, use uma IA local opcional e controle sua LG webOS — tudo em um só lugar." data-en="Meet Astra: chat by text or voice, use optional local AI, and control your LG webOS TV — all in one place.">Conheça Astra: converse por mensagem ou voz, use uma IA local opcional e controle sua LG webOS — tudo em um só lugar.</p>
           <div class="hero-actions">
-            <a class="download-button" href="./downloads/Astra-Setup-1.0.8.exe" download="Astra-Setup-1.0.8.exe">
+            <a class="download-button" id="primary-download" href="./downloads/Astra-Setup-1.0.8.exe" download="Astra-Setup-1.0.8.exe">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v4h14v-4" /></svg>
-              <span data-pt="Instalar Astra no Windows" data-en="Install Astra on Windows">Instalar Astra no Windows</span>
+              <span id="primary-download-label">Download para Windows</span>
             </a>
             <span class="version-label" data-pt="Versão 1.0.8 · Windows 10/11 · 64 bits" data-en="Version 1.0.8 · Windows 10/11 · 64-bit">Versão 1.0.8 · Windows 10/11 · 64 bits</span>
           </div>
@@ -100,13 +100,19 @@
         <div class="download-copy">
           <p class="eyebrow" data-pt="COMECE AGORA" data-en="GET STARTED">COMECE AGORA</p>
           <h2 data-pt="Instale a Astra em poucos passos." data-en="Install Astra in just a few steps.">Instale a Astra em poucos passos.</h2>
-          <p data-pt="Toque no botão para baixar o instalador. Abra o arquivo no Windows e siga as instruções na tela. Depois, configure sua IA." data-en="Tap the button to download the installer. Open the file on Windows and follow the on-screen instructions. Then set up your AI.">Toque no botão para baixar o instalador. Abra o arquivo no Windows e siga as instruções na tela. Depois, configure sua IA.</p>
-          <a class="download-button" href="./downloads/Astra-Setup-1.0.8.exe" download="Astra-Setup-1.0.8.exe">
+          <p data-pt="No computador Windows, clique em Download e abra o arquivo que aparecer nos downloads para instalar. No Android, o APK ainda não está disponível." data-en="On a Windows computer, click Download and open the downloaded file to install. The Android APK is not available yet.">No computador Windows, clique em Download e abra o arquivo que aparecer nos downloads para instalar. No Android, o APK ainda não está disponível.</p>
+          <a class="download-button windows-download" href="./downloads/Astra-Setup-1.0.8.exe" download="Astra-Setup-1.0.8.exe">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v4h14v-4" /></svg>
-            <span data-pt="Instalar Astra · Windows" data-en="Install Astra · Windows">Instalar Astra · Windows</span>
+            <span data-pt="Download para Windows" data-en="Download for Windows">Download para Windows</span>
           </a>
           <span class="version-label download-version" data-pt="Windows 10/11 · 64 bits" data-en="Windows 10/11 · 64-bit">Windows 10/11 · 64 bits</span>
-          <p class="mobile-download-note" data-pt="Está no celular? Você pode baixar o arquivo e transferi-lo para um PC, mas a Astra só instala e funciona no Windows 10/11." data-en="On your phone? You can download the file and transfer it to a PC, but Astra only installs and runs on Windows 10/11.">Está no celular? Você pode baixar o arquivo e transferi-lo para um PC, mas a Astra só instala e funciona no Windows 10/11.</p>
+          <div class="android-status" id="android-download">
+            <span class="android-badge">ANDROID</span>
+            <div>
+              <strong data-pt="APK ainda não disponível" data-en="APK not available yet">APK ainda não disponível</strong>
+              <p data-pt="O instalador do computador não funciona no celular. A versão Android ainda não foi lançada." data-en="The computer installer does not work on phones. The Android version has not been released yet.">O instalador do computador não funciona no celular. A versão Android ainda não foi lançada.</p>
+            </div>
+          </div>
         </div>
         <div class="install-steps">
           <div><span>01</span><p data-pt="Baixe o instalador para Windows." data-en="Download the Windows installer.">Baixe o instalador para Windows.</p></div>
