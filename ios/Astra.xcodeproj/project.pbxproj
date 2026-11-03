@@ -89,7 +89,7 @@
 		A10000000000000000000056 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsIn parallel = 1;
+				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 1600;
 			};
 			buildConfigurationList = A10000000000000000000050 /* Build configuration list for PBXProject "Astra" */;
