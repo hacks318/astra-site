@@ -351,6 +351,7 @@ private fun AstraScreen(preferences: android.content.SharedPreferences) {
     if (showSettings) {
         SettingsDialog(
             initial = settings,
+            preferences = preferences,
             onDismiss = { showSettings = false },
             onSave = {
                 saveSettings(preferences, it)
@@ -405,6 +406,7 @@ private fun MessageBubble(message: ChatMessage) {
 @Composable
 private fun SettingsDialog(
     initial: AiSettings,
+    preferences: android.content.SharedPreferences,
     onDismiss: () -> Unit,
     onSave: (AiSettings) -> Unit
 ) {
@@ -425,13 +427,15 @@ private fun SettingsDialog(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterButton("Ollama", isOllama) {
                         provider = "ollama"
-                        endpoint = "http://127.0.0.1:11434"
-                        model = "qwen2.5:3b"
+                        val ollamaSettings = readProviderSettings(preferences, "ollama")
+                        endpoint = ollamaSettings.first
+                        model = ollamaSettings.second
                     }
                     FilterButton("API", !isOllama) {
                         provider = "openai"
-                        endpoint = "https://api.openai.com/v1"
-                        model = "gpt-4o-mini"
+                        val apiSettings = readProviderSettings(preferences, "openai")
+                        endpoint = apiSettings.first
+                        model = apiSettings.second
                     }
                 }
                 SettingsField(
@@ -441,7 +445,7 @@ private fun SettingsDialog(
                 )
                 if (isOllama) {
                     Text(
-                        "Para Ollama no computador, use o IP local do computador e a mesma rede Wi-Fi. Não exponha o servidor à internet.",
+                        "Informe http://IP-DO-COMPUTADOR:11434 e o nome de um modelo instalado. O endereço fica salvo neste celular; 127.0.0.1 aponta para o próprio celular. Os dois dispositivos precisam estar na mesma rede Wi-Fi. Não exponha o Ollama à internet.",
                         color = Muted,
                         fontSize = 11.sp,
                         lineHeight = 15.sp
@@ -659,22 +663,57 @@ private fun requestAssistantReply(
 
 private fun readSettings(preferences: android.content.SharedPreferences): AiSettings {
     val provider = preferences.getString("provider", "ollama") ?: "ollama"
+    val providerSettings = readProviderSettings(preferences, provider)
     return AiSettings(
         provider = provider,
-        endpoint = preferences.getString(
-            "endpoint",
-            if (provider == "ollama") "http://127.0.0.1:11434" else "https://api.openai.com/v1"
-        ) ?: "",
-        model = preferences.getString("model", if (provider == "ollama") "qwen2.5:3b" else "gpt-4o-mini") ?: "",
+        endpoint = providerSettings.first,
+        model = providerSettings.second,
         apiKey = decryptApiKey(preferences.getString("api-key", null))
     )
 }
 
+private fun readProviderSettings(
+    preferences: android.content.SharedPreferences,
+    provider: String
+): Pair<String, String> {
+    val isOllama = provider == "ollama"
+    val endpointKey = if (isOllama) "ollama-endpoint" else "openai-endpoint"
+    val modelKey = if (isOllama) "ollama-model" else "openai-model"
+    val defaultEndpoint = if (isOllama) "http://127.0.0.1:11434" else "https://api.openai.com/v1"
+    val defaultModel = if (isOllama) "qwen2.5:3b" else "gpt-4o-mini"
+    val legacyProvider = preferences.getString("provider", "ollama")
+    val legacyEndpoint = if (legacyProvider == provider) preferences.getString("endpoint", null) else null
+    val legacyModel = if (legacyProvider == provider) preferences.getString("model", null) else null
+    return Pair(
+        preferences.getString(endpointKey, null) ?: legacyEndpoint ?: defaultEndpoint,
+        preferences.getString(modelKey, null) ?: legacyModel ?: defaultModel
+    )
+}
+
 private fun saveSettings(preferences: android.content.SharedPreferences, settings: AiSettings) {
+    val previousProvider = preferences.getString("provider", "ollama") ?: "ollama"
+    if (previousProvider != settings.provider) {
+        val previousPrefix = if (previousProvider == "ollama") "ollama" else "openai"
+        val migration = preferences.edit()
+        if (!preferences.contains("$previousPrefix-endpoint")) {
+            preferences.getString("endpoint", null)?.let {
+                migration.putString("$previousPrefix-endpoint", it)
+            }
+        }
+        if (!preferences.contains("$previousPrefix-model")) {
+            preferences.getString("model", null)?.let {
+                migration.putString("$previousPrefix-model", it)
+            }
+        }
+        migration.apply()
+    }
+    val prefix = if (settings.provider == "ollama") "ollama" else "openai"
     preferences.edit()
         .putString("provider", settings.provider)
         .putString("endpoint", settings.endpoint)
         .putString("model", settings.model)
+        .putString("$prefix-endpoint", settings.endpoint)
+        .putString("$prefix-model", settings.model)
         .apply()
     if (settings.apiKey.isNotBlank()) {
         preferences.edit().putString("api-key", encryptApiKey(settings.apiKey)).apply()
