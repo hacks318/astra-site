@@ -35,6 +35,10 @@ button { color: inherit; }
 .settings-link span { margin-right: 8px; }
 .main-panel { display: flex; flex: 1; flex-direction: column; min-width: 0; }
 .topbar { display: flex; height: 68px; align-items: center; justify-content: flex-end; padding: 0 32px; }
+.education-toggle { display: inline-flex; min-height: 34px; align-items: center; gap: 8px; margin-right: 14px; padding: 0 12px; border: 1px solid #343044; border-radius: 9px; background: #11121c; color: #bcb8ca; font-size: 11px; cursor: pointer; transition: background .18s, border-color .18s, color .18s; }
+.education-toggle span:first-child { color: #b493fa; font-size: 17px; }
+.education-toggle:hover, .education-toggle[aria-pressed="true"] { border-color: #785db4; background: #211a31; color: #e4d7ff; }
+.education-toggle[aria-pressed="true"] span:first-child { color: #a9e3ff; }
 .connection { display: flex; align-items: center; gap: 8px; color: #858697; font-size: 11px; }
 .conversation { display: flex; flex: 1; min-height: 0; flex-direction: column; align-items: center; justify-content: center; overflow: auto; padding: 5px 28px 0; }
 .conversation.chatting { justify-content: flex-start; }
@@ -65,6 +69,10 @@ button { color: inherit; }
 .suggestion { padding: 10px 13px; border: 1px solid #282638; border-radius: 8px; background: #10111b; color: #aa8bfa; font-size: 12px; cursor: pointer; }
 .suggestion span { margin-left: 5px; color: #b9b8c8; }
 .suggestion:hover { border-color: #7958b9; background: #161322; }
+.education-suggestion { border-color: #35506a; }
+.education-suggestion:hover, body[data-education-mode="true"] .education-suggestion { border-color: #5a91b5; background: #111c28; }
+body[data-education-mode="true"] .welcome .eyebrow { color: #9dc9e7; }
+body[data-education-mode="true"] .welcome h1 span { color: #9bdcff; }
 .messages { display: none; width: min(740px, 100%); flex: 1; flex-direction: column; gap: 19px; justify-content: flex-start; padding: 28px 4px 20px; }
 .messages.active { display: flex; }
 .message { display: flex; gap: 11px; align-items: flex-start; max-width: 91%; animation: appear .22s ease-out; }

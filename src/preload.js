@@ -19,14 +19,14 @@ contextBridge.exposeInMainWorld("astra", {
     ipcRenderer.on("tv:status", listener);
     return () => ipcRenderer.removeListener("tv:status", listener);
   },
-  sendMessage: (messages, onChunk) => {
+  sendMessage: (messages, onChunk, educationMode = false) => {
     const requestId = `${Date.now()}-${++nextRequestId}`;
     const listener = (_event, payload) => {
       if (payload.requestId === requestId) onChunk(payload.chunk);
     };
     ipcRenderer.on("chat:chunk", listener);
     return ipcRenderer
-      .invoke("chat:send", { messages, requestId })
+      .invoke("chat:send", { messages, requestId, educationMode })
       .finally(() => ipcRenderer.removeListener("chat:chunk", listener));
   }
 });

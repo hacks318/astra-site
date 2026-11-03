@@ -12,8 +12,8 @@ document.body.dataset.platform = platform;
 
 function updatePrimaryDownload(useEnglish) {
   if (platform === "windows") {
-    primaryDownload.href = "./downloads/Astra-Setup-1.0.8.exe";
-    primaryDownload.download = "Astra-Setup-1.0.8.exe";
+    primaryDownload.href = "./downloads/Astra-Setup-1.0.9.exe";
+    primaryDownload.download = "Astra-Setup-1.0.9.exe";
     primaryDownloadLabel.textContent = useEnglish
       ? "Download Astra AI"
       : "Download Astra IA";

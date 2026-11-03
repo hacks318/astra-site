@@ -7,6 +7,11 @@ const voiceButton = document.getElementById("voice-button");
 const orb = document.getElementById("orb-wrap");
 const orbCanvas = document.getElementById("orb-lines");
 const connectionLabel = document.getElementById("connection-label");
+const educationToggle = document.getElementById("education-toggle");
+const educationToggleLabel = document.getElementById("education-toggle-label");
+const welcomeEyebrow = document.getElementById("welcome-eyebrow");
+const welcomeTitle = document.getElementById("welcome-title");
+const welcomeCopy = document.getElementById("welcome-copy");
 const modal = document.getElementById("settings-modal");
 const settingsForm = document.getElementById("settings-form");
 const settingsError = document.getElementById("settings-error");
@@ -27,6 +32,31 @@ const history = [];
 let pairedTVs = [];
 let pairedTVApps = [];
 let activeTVHost = "";
+let educationMode = localStorage.getItem("astra-education-mode") === "true";
+
+function setEducationMode(enabled) {
+  educationMode = enabled;
+  document.body.dataset.educationMode = String(enabled);
+  educationToggle.setAttribute("aria-pressed", String(enabled));
+  educationToggleLabel.textContent = enabled
+    ? "Modo Educação ativo"
+    : "Modo Educação";
+  welcomeEyebrow.textContent = enabled
+    ? "APRENDER A SE PROTEGER"
+    : "SUA ASSISTENTE, DO SEU JEITO";
+  welcomeTitle.innerHTML = enabled
+    ? "Segurança digital<br /><span>sem mistério.</span>"
+    : "Oi, eu sou a <span>Astra.</span>";
+  welcomeCopy.innerHTML = enabled
+    ? "Aprenda a reconhecer golpes, proteger suas contas<br />e ensinar segurança digital com responsabilidade."
+    : "Estou aqui para conversar, ajudar com ideias<br />ou simplesmente fazer companhia.";
+  localStorage.setItem("astra-education-mode", String(enabled));
+}
+
+setEducationMode(educationMode);
+educationToggle.addEventListener("click", () => {
+  setEducationMode(!educationMode);
+});
 
 window.astra.onTVStatus((status) => {
   if (status.host === (tvSelection.value || activeTVHost)) {
@@ -247,7 +277,7 @@ async function sendMessage(value) {
       typingContent.textContent += chunk;
       setState("speaking", "A Astra está respondendo");
       scrollToBottom();
-    });
+    }, educationMode);
     typing.remove();
     history.push({ role: "assistant", content: reply });
     appendMessage("assistant", reply);
@@ -380,7 +410,14 @@ document.getElementById("new-chat").addEventListener("click", () => {
 });
 
 document.querySelectorAll(".suggestion").forEach((button) => {
-  button.addEventListener("click", () => sendMessage(button.dataset.prompt));
+  button.addEventListener("click", () => {
+    if (button.dataset.educationPrompt) {
+      setEducationMode(true);
+      sendMessage(button.dataset.educationPrompt);
+      return;
+    }
+    sendMessage(button.dataset.prompt);
+  });
 });
 
 function stopRecognition() {

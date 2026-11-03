@@ -33,6 +33,10 @@
       <main class="main-panel">
         <header class="topbar">
           <div class="connection"><span class="status-dot"></span><span id="connection-label">Pronta para conversar</span></div>
+          <button class="education-toggle" id="education-toggle" type="button" aria-pressed="false">
+            <span aria-hidden="true">◇</span>
+            <span id="education-toggle-label">Modo Educação</span>
+          </button>
           <button class="icon-button settings-mobile" id="open-settings-mobile" aria-label="Configurações">⚙</button>
         </header>
 
@@ -47,13 +51,16 @@
             <div class="orb-ring"></div>
           </div>
           <div class="welcome" id="welcome">
-            <p class="eyebrow">SUA ASSISTENTE, DO SEU JEITO</p>
-            <h1>Oi, eu sou a <span>Astra.</span></h1>
-            <p class="welcome-copy">Estou aqui para conversar, ajudar com ideias<br />ou simplesmente fazer companhia.</p>
+            <p class="eyebrow" id="welcome-eyebrow">SUA ASSISTENTE, DO SEU JEITO</p>
+            <h1 id="welcome-title">Oi, eu sou a <span>Astra.</span></h1>
+            <p class="welcome-copy" id="welcome-copy">Estou aqui para conversar, ajudar com ideias<br />ou simplesmente fazer companhia.</p>
             <div class="suggestions">
               <button class="suggestion" data-prompt="Me ajude a organizar meu dia">✳ <span>Organizar meu dia</span></button>
               <button class="suggestion" data-prompt="Me conte uma curiosidade interessante">✧ <span>Me conte uma curiosidade</span></button>
               <button class="suggestion" data-prompt="Me ajude a ter uma ideia criativa">⌁ <span>Ter uma ideia criativa</span></button>
+              <button class="suggestion education-suggestion" data-education-prompt="Explique como reconhecer uma tentativa de phishing, com exemplos fictícios e dicas seguras para alunos.">◇ <span>Aprender a reconhecer phishing</span></button>
+              <button class="suggestion education-suggestion" data-education-prompt="Monte um plano de aula de 30 minutos sobre segurança de senhas e autenticação em duas etapas para adolescentes, com objetivo, atividade e perguntas de revisão.">◇ <span>Preparar uma aula de segurança digital</span></button>
+              <button class="suggestion education-suggestion" data-education-prompt="Crie um quiz de 5 perguntas para alunos sobre privacidade e segurança digital. Use situações fictícias e inclua o gabarito explicado no final.">◇ <span>Fazer um quiz de segurança</span></button>
             </div>
           </div>
           <div class="messages" id="messages"></div>

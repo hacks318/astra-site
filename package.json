@@ -1,6 +1,6 @@
 {
   "name": "astra-assistant",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Assistente de IA para desktop com voz e texto.",
   "main": "src/main.js",
   "author": "Astra",
