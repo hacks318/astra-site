@@ -308,22 +308,22 @@ private struct AstraView: View {
                 ("Fazer um quiz", "Crie um quiz de 5 perguntas para alunos sobre privacidade e segurança digital. Use situações fictícias e inclua o gabarito explicado no final.")
             ]
         }
-
-        private var welcomeTitle: AttributedString {
-            if educationMode {
-                return AttributedString("Segurança digital\nsem mistério.")
-            }
-            var title = AttributedString("Oi, eu sou a Astra.")
-            if let range = title.range(of: "Astra.") {
-                title[range].foregroundColor = AstraStyle.purple
-            }
-            return title
-        }
         return [
             ("Organizar meu dia", "Me ajude a organizar meu dia"),
             ("Uma curiosidade", "Me conte uma curiosidade interessante"),
             ("Uma ideia criativa", "Me ajude a ter uma ideia criativa")
         ]
+    }
+
+    private var welcomeTitle: AttributedString {
+        if educationMode {
+            return AttributedString("Segurança digital\nsem mistério.")
+        }
+        var title = AttributedString("Oi, eu sou a Astra.")
+        if let range = title.range(of: "Astra.") {
+            title[range].foregroundColor = AstraStyle.purple
+        }
+        return title
     }
 
     private func send(_ text: String) {

@@ -465,49 +465,49 @@ private fun MessageBubble(message: ChatMessage) {
             )
         }
     }
+}
 
-    @Composable
-    private fun OrbVisual(modifier: Modifier = Modifier) {
-        val transition = rememberInfiniteTransition(label = "astra-orb")
-        val scale by transition.animateFloat(
-            initialValue = 0.94f,
-            targetValue = 1.06f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1800),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "orb-pulse"
+@Composable
+private fun OrbVisual(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "astra-orb")
+    val scale by transition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "orb-pulse"
+    )
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.74f)
+                .background(Color(0x2E733DFF), CircleShape)
         )
-        Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(0.74f)
-                    .background(Color(0x2E733DFF), CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(0.67f)
-                    .border(1.dp, Color(0x5CBE9BFF), CircleShape)
-                    .background(Color(0x14A074FF), CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(0.4f)
-                    .graphicsLayer(scaleX = scale, scaleY = scale)
-                    .background(
-                        Brush.radialGradient(
-                            listOf(
-                                Color(0xFFF3D9FF),
-                                Color(0xFFCDA1FF),
-                                Color(0xFF9966FB),
-                                Color(0xFF5834AE),
-                                Color(0xFF11101D)
-                            )
-                        ),
-                        CircleShape
-                    )
-            )
-        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.67f)
+                .border(1.dp, Color(0x5CBE9BFF), CircleShape)
+                .background(Color(0x14A074FF), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.4f)
+                .graphicsLayer(scaleX = scale, scaleY = scale)
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            Color(0xFFF3D9FF),
+                            Color(0xFFCDA1FF),
+                            Color(0xFF9966FB),
+                            Color(0xFF5834AE),
+                            Color(0xFF11101D)
+                        )
+                    ),
+                    CircleShape
+                )
+        )
     }
 }
 
