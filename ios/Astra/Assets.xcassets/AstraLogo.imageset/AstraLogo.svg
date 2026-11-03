@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48">
+  <defs>
+    <linearGradient id="astra-purple" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#c9a8ff"/>
+      <stop offset="1" stop-color="#8d62ea"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="46" height="46" rx="14" fill="#11101d" stroke="#a47bff" stroke-opacity=".65"/>
+  <path d="m24 9 13 30h-6l-3-8H20l-3 8h-6L24 9Zm0 10-3 7h6l-3-7Z" fill="url(#astra-purple)"/>
+  <text x="60" y="35" fill="#f4f1ff" font-family="Arial, sans-serif" font-size="31" font-weight="700" letter-spacing="-1.7">astra</text>
+  <circle cx="147" cy="31" r="3" fill="#ad88ff"/>
+</svg>

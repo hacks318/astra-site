@@ -43,3 +43,9 @@ Ative **Modo Educação** no topo da janela para receber explicações defensiva
 O app Android inicial fica em `mobile/` e inclui conversa por texto, Modo Educação e configuração de Ollama ou API compatível com OpenAI. O provedor, endereço e modelo ficam salvos no celular; as configurações de Ollama e da API são mantidas separadamente. A chave da API fica criptografada pelo Android Keystore; o histórico da conversa não é persistido. Para usar um Ollama no computador, conecte o celular e o computador à mesma rede Wi-Fi e informe no app `http://` seguido do IP local do computador e da porta `11434` (por exemplo, `http://192.168.1.20:11434`), além de um modelo instalado. `127.0.0.1` aponta para o próprio celular. Não exponha o Ollama à internet. APIs de terceiros recebem as mensagens enviadas ao conversar.
 
 O workflow **Build Astra Android APK** compila o projeto no GitHub Actions e publica o APK de depuração como artefato da execução. O APK de depuração serve para testes; uma versão assinada para distribuição pública requer uma chave de assinatura de lançamento protegida.
+
+## Astra para iOS
+
+O protótipo iOS fica em `ios/` e inclui chat, Modo Educação, conexão com Ollama ou API compatível e configurações salvas no aparelho. A chave da API é guardada no Keychain. Para usar Ollama no computador, conecte o iPhone e o computador à mesma rede Wi-Fi e informe o IP local do computador e a porta `11434`; não exponha o servidor à internet.
+
+O workflow **Build Astra iOS** verifica a compilação para o simulador e publica o app como artefato de teste. Para instalar em um iPhone ou publicar na App Store, ainda é necessário assinar o app com uma conta Apple Developer; a compilação do simulador não é instalável em um iPhone.

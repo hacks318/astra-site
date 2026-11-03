@@ -17,9 +17,8 @@ body::before { position: fixed; z-index: -1; inset: 0; pointer-events: none; bac
 a { color: inherit; }
 button { font: inherit; }
 .topbar { width: min(1120px, calc(100% - 48px)); height: 82px; margin: auto; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ffffff0d; }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: #f4f1ff; font-size: 24px; font-weight: 750; letter-spacing: -1.3px; text-decoration: none; }
-.brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #a47bff8c; border-radius: 10px; color: #d2baff; background: linear-gradient(145deg, #9b69ff45, #34205c55); font-size: 17px; }
-.brand-dot { color: var(--purple); }
+.brand { display: inline-flex; align-items: center; text-decoration: none; }
+.brand-logo { display: block; width: 150px; height: auto; }
 nav { display: flex; align-items: center; gap: 30px; color: #aaa8ba; font-size: 12px; }
 nav a, .language-button { text-decoration: none; transition: color .2s; }
 nav a:hover, .language-button:hover { color: #fff; }

@@ -3,6 +3,9 @@ release/
 dist/
 mobile/.gradle/
 mobile/**/build/
+ios/DerivedData/
+ios/build/
+ios/**/xcuserdata/
 
 .env
 .env.*
