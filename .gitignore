@@ -1,6 +1,8 @@
 node_modules/
 release/
 dist/
+mobile/.gradle/
+mobile/**/build/
 
 .env
 .env.*

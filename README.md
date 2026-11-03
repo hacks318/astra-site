@@ -37,3 +37,9 @@ O reconhecimento de voz depende do suporte do Chromium e da permissão de microf
 ## Modo Educação: segurança digital
 
 Ative **Modo Educação** no topo da janela para receber explicações defensivas sobre phishing, golpes, privacidade e proteção de contas. Os atalhos na tela inicial geram atividades fictícias, quizzes e planos de aula para professores. Não use mensagens ou dados reais de alunos; o modo não orienta invasões, roubo de credenciais, malware ou evasão de proteções. Para atividades escolares, um professor deve revisar o material antes de aplicá-lo.
+
+## Astra para Android
+
+O app Android inicial fica em `mobile/` e inclui conversa por texto, Modo Educação e configuração de Ollama ou API compatível com OpenAI. A chave da API fica criptografada pelo Android Keystore; o histórico da conversa não é persistido. Para usar um Ollama no computador, conecte o celular e o computador à mesma rede Wi-Fi e informe no app o IP local do computador e a porta `11434`; não exponha o Ollama à internet. APIs de terceiros recebem as mensagens enviadas ao conversar.
+
+O workflow **Build Astra Android APK** compila o projeto no GitHub Actions e publica o APK de depuração como artefato da execução. O APK de depuração serve para testes; uma versão assinada para distribuição pública requer uma chave de assinatura de lançamento protegida.
