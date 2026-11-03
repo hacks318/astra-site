@@ -40,7 +40,9 @@ jobs:
             echo "Android SDK manager was not found at $SDKMANAGER"
             exit 1
           fi
+          set +o pipefail
           yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses
+          set -o pipefail
           "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build debug APK
