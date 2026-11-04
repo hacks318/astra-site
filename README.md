@@ -18,6 +18,14 @@ O site estático fica em `site/` e inclui o instalador Windows atual. Para publi
 
 O endereço público só é criado depois que o projeto estiver em um repositório hospedado e o workflow terminar. Um domínio próprio é opcional.
 
+## API própria para os apps móveis
+
+O backend da Astra fica em `api/` e usa um modelo open-source executado pelo Ollama no próprio servidor; ele não envia conversas para uma API de IA de terceiros. O Docker Compose mantém o modelo e a API em containers separados, publica apenas HTTPS pelo Caddy e limita o uso por IP e o número de respostas simultâneas. O modelo inicial é `qwen2.5:3b`, adequado para testar em uma máquina ARM com CPU, mas mais lento que um serviço com GPU.
+
+Uma opção sem mensalidade dentro dos limites é uma VM elegível ao Oracle Cloud Always Free. A disponibilidade de capacidade não é garantida, não há GPU nesse perfil e a criação da conta exige verificação de identidade e cartão. A Oracle também pode reclamar VMs Always Free consideradas ociosas; portanto, isso não garante disponibilidade permanente. Não selecione recursos pagos. Depois de criar uma VM ARM64 Ubuntu, instale Docker e Compose, aponte um domínio para o IPv4 público, copie `.env.example` para `.env` e preencha `ASTRA_API_DOMAIN`. Execute `docker compose up -d ollama`, baixe o modelo com `docker compose exec ollama ollama pull qwen2.5:3b` e então execute `docker compose up -d --build`. O Caddy solicita e renova o certificado HTTPS automaticamente. Não abra as portas do Ollama (`11434`) nem da API (`8080`) para a internet; exponha somente `80` e `443`.
+
+O GitHub Pages não executa esse backend. A conta Oracle, a VM e o domínio precisam ser configurados antes de fixar o endereço HTTPS da API no Android e iOS; não há URL pública implantada ainda. A API deve ser validada com `npm run test:api`.
+
 ## Usar a IA local
 
 Em **Configurações**, selecione **Neste computador (Ollama)**. O padrão usa `http://127.0.0.1:11434` e o modelo `qwen2.5:3b`. A Astra tenta iniciar o servidor Ollama instalado no Windows se ele não estiver ativo. Use **Testar conexão** para confirmar que o servidor e o modelo estão disponíveis. A conversa é enviada ao Ollama local e não requer chave de API nem um serviço externo.
