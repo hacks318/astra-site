@@ -22,9 +22,24 @@ O endereço público só é criado depois que o projeto estiver em um repositór
 
 O backend da Astra fica em `api/` e usa um modelo open-source executado pelo Ollama no próprio servidor; ele não envia conversas para uma API de IA de terceiros. O Docker Compose mantém o modelo e a API em containers separados, publica apenas HTTPS pelo Caddy e limita o uso por IP e o número de respostas simultâneas. O modelo inicial é `qwen2.5:3b`, adequado para testar em uma máquina ARM com CPU, mas mais lento que um serviço com GPU.
 
-Uma opção sem mensalidade dentro dos limites é uma VM elegível ao Oracle Cloud Always Free. A disponibilidade de capacidade não é garantida, não há GPU nesse perfil e a criação da conta exige verificação de identidade e cartão. A Oracle também pode reclamar VMs Always Free consideradas ociosas; portanto, isso não garante disponibilidade permanente. Não selecione recursos pagos. Depois de criar uma VM ARM64 Ubuntu, instale Docker e Compose, aponte um domínio para o IPv4 público, copie `.env.example` para `.env` e preencha `ASTRA_API_DOMAIN`. Execute `docker compose up -d ollama`, baixe o modelo com `docker compose exec ollama ollama pull qwen2.5:3b` e então execute `docker compose up -d --build`. O Caddy solicita e renova o certificado HTTPS automaticamente. Não abra as portas do Ollama (`11434`) nem da API (`8080`) para a internet; exponha somente `80` e `443`.
+Para tentar manter a API ligada sem mensalidade, use uma VM elegível ao Oracle Cloud Always Free. A Oracle informa até 2 OCPUs ARM e 12 GB de RAM dentro dos limites gratuitos, sem GPU; o modelo pode responder devagar. Capacidade gratuita não é garantida e a Oracle pode reclamar VMs consideradas ociosas, então isso não garante disponibilidade permanente. O cadastro exige verificação de identidade e cartão; não selecione recursos pagos.
 
-O GitHub Pages não executa esse backend. A conta Oracle, a VM e o domínio precisam ser configurados antes de fixar o endereço HTTPS da API no Android e iOS; não há URL pública implantada ainda. A API deve ser validada com `npm run test:api`.
+1. Crie uma conta no [Oracle Cloud Free Tier](https://www.oracle.com/cloud/free/).
+2. No console, crie uma VM Ubuntu ARM64 (`VM.Standard.A1.Flex`) com até 2 OCPUs e 12 GB de memória, dentro do limite Always Free. Guarde a chave SSH privada somente no seu computador.
+3. Nas regras de entrada da rede da VM, permita TCP `22` somente do seu IP e TCP `80`/`443` para acesso à API. Não libere `11434` nem `8080`.
+4. Conecte por SSH e execute:
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y git
+   sudo git clone --depth 1 https://github.com/hacks318/astra-site.git /opt/astra-site
+   cd /opt/astra-site
+   sudo bash api/deploy-vm.sh api.<IP-PUBLICO>.nip.io
+   ```
+
+   Troque `<IP-PUBLICO>` pelo IPv4 público real da VM. `nip.io` fornece o DNS gratuito desse endereço; o Caddy configura HTTPS automaticamente.
+
+O script instala Docker, baixa `qwen2.5:3b` e inicia a API. O GitHub Pages não executa esse backend. A conta Oracle e a VM precisam ser criadas antes de definir o endereço HTTPS final no Android e iOS; os apps ainda não estão ligados à API, pois não há um servidor público. A API deve ser validada com `npm run test:api`.
 
 ## Usar a IA local
 
