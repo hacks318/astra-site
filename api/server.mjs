@@ -216,8 +216,9 @@ export function createAstraApi({
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number.parseInt(process.env.PORT || "8080", 10);
+  const host = process.env.HOST || "127.0.0.1";
   const server = createAstraApi();
-  server.listen(port, "0.0.0.0", () => {
-    console.log(`API Astra ouvindo na porta ${port}.`);
+  server.listen(port, host, () => {
+    console.log(`API Astra ouvindo em ${host}:${port}.`);
   });
 }

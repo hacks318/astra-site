@@ -11,15 +11,28 @@ private enum AstraStyle {
 }
 
 private enum AIProvider: String, CaseIterable, Identifiable {
+    case astra
     case ollama
     case openAI = "openai"
 
     var id: String { rawValue }
-    var title: String { self == .ollama ? "Ollama" : "API compatível" }
-    var defaultEndpoint: String {
-        self == .ollama ? "" : "https://api.openai.com/v1"
+    var title: String {
+        switch self {
+        case .astra: "Astra"
+        case .ollama: "Ollama"
+        case .openAI: "API compatível"
+        }
     }
-    var defaultModel: String { self == .ollama ? "qwen2.5:3b" : "gpt-4o-mini" }
+    var defaultEndpoint: String {
+        switch self {
+        case .astra: "http://192.168.1.3:8080/v1"
+        case .ollama: ""
+        case .openAI: "https://api.openai.com/v1"
+        }
+    }
+    var defaultModel: String {
+        self == .openAI ? "gpt-4o-mini" : "qwen2.5:3b"
+    }
 }
 
 private struct ChatMessage: Identifiable {
@@ -36,12 +49,20 @@ private struct AISettings {
 
     static func load() -> AISettings {
         let defaults = UserDefaults.standard
-        let provider = AIProvider(rawValue: defaults.string(forKey: "astra.provider") ?? "") ?? .ollama
+        let savedProvider = AIProvider(rawValue: defaults.string(forKey: "astra.provider") ?? "") ?? .astra
+        let savedPrefix = savedProvider.rawValue
+        let savedEndpoint = defaults.string(forKey: "astra.\(savedPrefix).endpoint") ?? savedProvider.defaultEndpoint
+        let migrateToAstra = savedProvider == .ollama &&
+            ["", "http://127.0.0.1:11434", "http://localhost:11434"]
+                .contains(savedEndpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
+        let provider = migrateToAstra ? AIProvider.astra : savedProvider
         let prefix = provider.rawValue
-        let savedEndpoint = defaults.string(forKey: "astra.\(prefix).endpoint") ?? provider.defaultEndpoint
+        let endpoint = provider == .astra && savedProvider == .ollama
+            ? provider.defaultEndpoint
+            : defaults.string(forKey: "astra.\(prefix).endpoint") ?? provider.defaultEndpoint
         return AISettings(
             provider: provider,
-            endpoint: provider == .ollama && ["http://127.0.0.1:11434", "http://localhost:11434"].contains(savedEndpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/"))) ? "" : savedEndpoint,
+            endpoint: endpoint,
             model: defaults.string(forKey: "astra.\(prefix).model") ?? provider.defaultModel,
             apiKey: KeychainStore.read() ?? ""
         )
@@ -406,6 +427,8 @@ private struct AstraOrb: View {
 
 private struct SettingsDraft {
     var provider: AIProvider
+    var astraEndpoint: String
+    var astraModel: String
     var ollamaEndpoint: String
     var ollamaModel: String
     var apiEndpoint: String
@@ -413,8 +436,14 @@ private struct SettingsDraft {
 
     init() {
         let defaults = UserDefaults.standard
-        provider = AIProvider(rawValue: defaults.string(forKey: "astra.provider") ?? "") ?? .ollama
+        let savedProvider = AIProvider(rawValue: defaults.string(forKey: "astra.provider") ?? "") ?? .astra
         let savedOllamaEndpoint = defaults.string(forKey: "astra.ollama.endpoint") ?? AIProvider.ollama.defaultEndpoint
+        let migrateToAstra = savedProvider == .ollama &&
+            ["", "http://127.0.0.1:11434", "http://localhost:11434"]
+                .contains(savedOllamaEndpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
+        provider = migrateToAstra ? .astra : savedProvider
+        astraEndpoint = defaults.string(forKey: "astra.astra.endpoint") ?? AIProvider.astra.defaultEndpoint
+        astraModel = defaults.string(forKey: "astra.astra.model") ?? AIProvider.astra.defaultModel
         ollamaEndpoint = ["http://127.0.0.1:11434", "http://localhost:11434"].contains(savedOllamaEndpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/"))) ? "" : savedOllamaEndpoint
         ollamaModel = defaults.string(forKey: "astra.ollama.model") ?? AIProvider.ollama.defaultModel
         apiEndpoint = defaults.string(forKey: "astra.openai.endpoint") ?? AIProvider.openAI.defaultEndpoint
@@ -422,12 +451,36 @@ private struct SettingsDraft {
     }
 
     var endpoint: String {
-        get { provider == .ollama ? ollamaEndpoint : apiEndpoint }
-        set { if provider == .ollama { ollamaEndpoint = newValue } else { apiEndpoint = newValue } }
+        get {
+            switch provider {
+            case .astra: astraEndpoint
+            case .ollama: ollamaEndpoint
+            case .openAI: apiEndpoint
+            }
+        }
+        set {
+            switch provider {
+            case .astra: astraEndpoint = newValue
+            case .ollama: ollamaEndpoint = newValue
+            case .openAI: apiEndpoint = newValue
+            }
+        }
     }
     var model: String {
-        get { provider == .ollama ? ollamaModel : apiModel }
-        set { if provider == .ollama { ollamaModel = newValue } else { apiModel = newValue } }
+        get {
+            switch provider {
+            case .astra: astraModel
+            case .ollama: ollamaModel
+            case .openAI: apiModel
+            }
+        }
+        set {
+            switch provider {
+            case .astra: astraModel = newValue
+            case .ollama: ollamaModel = newValue
+            case .openAI: apiModel = newValue
+            }
+        }
     }
 }
 
@@ -442,7 +495,7 @@ private struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("Provedor de IA") {
-                    Text("A Astra não inclui uma chave de API. Para usar uma API compatível, informe seu endereço HTTPS e sua chave. Ollama pode usar o servidor local do computador.")
+                    Text("Astra usa o modelo próprio no computador conectado à rede. Mantenha o PC ligado e os aparelhos no mesmo Wi-Fi.")
                         .font(.footnote)
                         .foregroundStyle(AstraStyle.muted)
                     Picker("Provedor", selection: $draft.provider) {
@@ -451,19 +504,28 @@ private struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    TextField(draft.provider == .ollama ? "http://192.168.1.20:11434" : "Endereço do servidor", text: $draft.endpoint)
+                    TextField(
+                        draft.provider == .astra ? "http://192.168.1.3:8080/v1" : draft.provider == .ollama ? "http://192.168.1.20:11434" : "Endereço do servidor",
+                        text: $draft.endpoint
+                    )
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
-                    TextField("Modelo instalado", text: $draft.model)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                    if draft.provider != .astra {
+                        TextField("Modelo instalado", text: $draft.model)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
 
-                    if draft.provider == .ollama {
+                    if draft.provider == .astra {
+                        Text("API própria da Astra, sem chave. Endereço padrão deste computador: http://192.168.1.3:8080/v1. iPhone e computador precisam estar no mesmo Wi-Fi, com o PC ligado e o Ollama ativo.")
+                            .font(.footnote)
+                            .foregroundStyle(AstraStyle.muted)
+                    } else if draft.provider == .ollama {
                         Text("No computador, permita conexões do Ollama pela rede local. Informe o IP do computador e a porta 11434 (ex.: http://192.168.1.20:11434), além de um modelo instalado. iPhone e computador precisam estar no mesmo Wi-Fi. 127.0.0.1 aponta para o próprio iPhone. Não exponha o Ollama à internet.")
                             .font(.footnote)
                             .foregroundStyle(AstraStyle.muted)
-                    } else {
+                    } else if draft.provider == .openAI {
                         SecureField("Chave da API", text: $apiKey)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
@@ -508,12 +570,20 @@ private struct SettingsView: View {
             validationError = "Informe um endereço http:// ou https:// válido."
             return
         }
+        if draft.provider == .astra, !isPrivateIPv4(url.host ?? "") {
+            validationError = "A API própria da Astra só aceita um endereço IPv4 privado da rede local."
+            return
+        }
         if draft.provider == .ollama, ["localhost", "127.0.0.1", "::1"].contains(url.host?.lowercased() ?? "") {
             validationError = "127.0.0.1 é o próprio iPhone. Informe o IP local do computador que está rodando o Ollama."
             return
         }
         guard !draft.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             validationError = "Informe o nome do modelo."
+            return
+        }
+        if draft.provider == .astra, scheme != "http" {
+            validationError = "Na rede local, use o endereço HTTP do servidor Astra."
             return
         }
         if draft.provider == .openAI {
@@ -535,6 +605,8 @@ private struct SettingsView: View {
         }
         let defaults = UserDefaults.standard
         defaults.set(draft.provider.rawValue, forKey: "astra.provider")
+        defaults.set(draft.astraEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/")), forKey: "astra.astra.endpoint")
+        defaults.set(draft.astraModel.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "astra.astra.model")
         defaults.set(draft.ollamaEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/")), forKey: "astra.ollama.endpoint")
         defaults.set(draft.ollamaModel.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "astra.ollama.model")
         defaults.set(draft.apiEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/")), forKey: "astra.openai.endpoint")
@@ -547,17 +619,29 @@ private enum AstraClient {
     static func reply(settings: AISettings, history: [ChatMessage], educationMode: Bool) async throws -> String {
         let endpoint = settings.endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !endpoint.isEmpty else {
-            let hint = settings.provider == .ollama
-                ? "Configure o endereço do Ollama em Ajustes. Use o IP local do computador, por exemplo http://192.168.1.20:11434."
-                : "Configure o endereço da API em Ajustes."
+            let hint: String
+            switch settings.provider {
+            case .astra:
+                hint = "Confira se o computador da Astra está ligado no mesmo Wi-Fi."
+            case .ollama:
+                hint = "Configure o endereço do Ollama em Ajustes usando o IP local do computador."
+            case .openAI:
+                hint = "Configure o endereço da API em Ajustes."
+            }
             throw AstraError.message(hint)
         }
         let path = settings.provider == .ollama ? "/api/chat" : "/chat/completions"
         guard let url = URL(string: endpoint + path) else {
             throw AstraError.message("O endereço do servidor é inválido.")
         }
+        if settings.provider == .astra, !isPrivateIPv4(url.host ?? "") {
+            throw AstraError.message("A API própria da Astra só pode ser acessada em um endereço IPv4 privado da rede local.")
+        }
         if settings.provider == .ollama, ["localhost", "127.0.0.1", "::1"].contains(url.host?.lowercased() ?? "") {
             throw AstraError.message("127.0.0.1 aponta para o próprio iPhone. Em Ajustes > Ollama, informe o IP do computador (ex.: http://192.168.1.20:11434). Os dois aparelhos precisam estar no mesmo Wi-Fi e o Ollama deve aceitar conexões da rede local.")
+        }
+        if settings.provider == .astra, url.scheme != "http" {
+            throw AstraError.message("Na rede local, use o endereço HTTP do servidor Astra.")
         }
         if settings.provider == .openAI, url.scheme != "https" {
             throw AstraError.message("Use HTTPS para proteger sua chave da API.")
@@ -576,7 +660,8 @@ private enum AstraClient {
         let body: [String: Any] = [
             "model": settings.model,
             "messages": apiMessages,
-            "stream": false
+            "stream": false,
+            "educationMode": educationMode
         ]
         var request = URLRequest(url: url, timeoutInterval: 90)
         request.httpMethod = "POST"
@@ -615,6 +700,14 @@ private enum AstraError: LocalizedError {
         if case let .message(text) = self { return text }
         return nil
     }
+}
+
+private func isPrivateIPv4(_ host: String) -> Bool {
+    let octets = host.split(separator: ".").compactMap { UInt8($0) }
+    guard octets.count == 4 else { return false }
+    return octets[0] == 10 ||
+        (octets[0] == 172 && (16...31).contains(octets[1])) ||
+        (octets[0] == 192 && octets[1] == 168)
 }
 
 private enum KeychainStore {

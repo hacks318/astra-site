@@ -39,7 +39,7 @@ Para tentar manter a API ligada sem mensalidade, use uma VM elegível ao Oracle 
 
    Troque `<IP-PUBLICO>` pelo IPv4 público real da VM. `nip.io` fornece o DNS gratuito desse endereço; o Caddy configura HTTPS automaticamente.
 
-O script instala Docker, baixa `qwen2.5:3b` e inicia a API. O GitHub Pages não executa esse backend. A conta Oracle e a VM precisam ser criadas antes de definir o endereço HTTPS final no Android e iOS; os apps ainda não estão ligados à API, pois não há um servidor público. A API deve ser validada com `npm run test:api`.
+Se não quiser criar uma conta de nuvem agora, execute `powershell -ExecutionPolicy Bypass -File .\api\start-local.ps1` no Windows da Astra. O celular e o computador devem estar na mesma rede Wi-Fi e o computador precisa permanecer ligado. O app móvel vem configurado para usar `http://192.168.1.3:8080/v1` sem chave; se o IP do computador mudar, atualize-o em **Configurações → Astra**. Essa opção funciona somente na rede local e não mantém a IA acessível quando o PC está desligado.
 
 ## Usar a IA local
 
@@ -63,12 +63,12 @@ Ative **Modo Educação** no topo da janela para receber explicações defensiva
 
 ## Astra para Android
 
-O app Android inicial fica em `mobile/` e inclui conversa por texto, Modo Educação e configuração de Ollama ou API compatível com OpenAI. O provedor, endereço e modelo ficam salvos no celular; as configurações de Ollama e da API são mantidas separadamente. A chave da API fica criptografada pelo Android Keystore; o histórico da conversa não é persistido. Para usar o Ollama no computador, configure-o para aceitar conexões da rede local, conecte celular e computador ao mesmo Wi-Fi e informe no app o IP local do computador na porta `11434` (por exemplo, `http://192.168.1.20:11434`) e o nome de um modelo instalado. `127.0.0.1` aponta para o próprio celular, não para o computador. Não exponha o Ollama à internet. APIs de terceiros recebem as mensagens enviadas ao conversar.
+O app Android inclui o provedor **Astra**, que usa a API própria no computador pela rede local sem pedir chave. O provedor, endereço e modelo ficam salvos no celular; também é possível escolher Ollama ou uma API compatível. O histórico da conversa não é persistido.
 
 O workflow **Build Astra Android APK** compila o projeto no GitHub Actions e publica o APK de depuração como artefato da execução. O APK de depuração serve para testes; uma versão assinada para distribuição pública requer uma chave de assinatura de lançamento protegida.
 
 ## Astra para iOS
 
-O protótipo iOS fica em `ios/` e inclui chat, Modo Educação, conexão com Ollama ou API compatível e configurações salvas no aparelho. A chave da API é guardada no Keychain. Para usar Ollama no computador, conecte o iPhone e o computador à mesma rede Wi-Fi e informe o IP local do computador e a porta `11434`; não exponha o servidor à internet.
+O protótipo iOS inclui chat, Modo Educação, conexão à API própria da Astra na rede local, além de Ollama e API compatível. As configurações ficam salvas no aparelho; a chave de API compatível é guardada no Keychain.
 
 O workflow **Build Astra iOS** verifica a compilação para o simulador e publica o app como artefato de teste. Para instalar em um iPhone ou publicar na App Store, ainda é necessário assinar o app com uma conta Apple Developer; a compilação do simulador não é instalável em um iPhone.

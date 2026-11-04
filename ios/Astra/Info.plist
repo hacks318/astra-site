@@ -24,7 +24,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Astra uses your local network to connect to your Ollama server on your computer.</string>
+	<string>Astra uses your local network to connect to its AI server on your computer.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

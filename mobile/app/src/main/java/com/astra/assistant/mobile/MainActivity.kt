@@ -93,6 +93,7 @@ private val Panel = Color(0xFF11121C)
 private val Purple = Color(0xFFB493FA)
 private val Muted = Color(0xFF9998AA)
 private val Blue = Color(0xFF73CCFF)
+private const val ASTRA_API_DEFAULT_ENDPOINT = "http://192.168.1.3:8080/v1"
 private data class ChatMessage(val role: String, val content: String)
 private data class AiSettings(
     val provider: String,
@@ -532,15 +533,21 @@ private fun SettingsDialog(
         title = { Text("Conectar sua IA") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("A Astra não inclui uma chave de API. Para usar uma API, informe seu endereço HTTPS e sua chave. Ollama pode usar o servidor local do computador.", color = Muted, fontSize = 12.sp)
+                Text("Astra usa o modelo próprio no computador conectado à rede. Mantenha o PC ligado e os aparelhos no mesmo Wi-Fi.", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterButton("Astra", provider == "astra") {
+                        provider = "astra"
+                        val astraSettings = readProviderSettings(preferences, "astra")
+                        endpoint = astraSettings.first
+                        model = astraSettings.second
+                    }
                     FilterButton("Ollama", isOllama) {
                         provider = "ollama"
                         val ollamaSettings = readProviderSettings(preferences, "ollama")
                         endpoint = ollamaSettings.first
                         model = ollamaSettings.second
                     }
-                    FilterButton("API", !isOllama) {
+                    FilterButton("API", provider == "openai") {
                         provider = "openai"
                         val apiSettings = readProviderSettings(preferences, "openai")
                         endpoint = apiSettings.first
@@ -550,9 +557,20 @@ private fun SettingsDialog(
                 SettingsField(
                     value = endpoint,
                     onChange = { endpoint = it },
-                    label = if (isOllama) "http://192.168.1.20:11434" else "Endereço da API"
+                    label = when (provider) {
+                        "astra" -> "http://192.168.1.3:8080/v1"
+                        "ollama" -> "http://192.168.1.20:11434"
+                        else -> "Endereço da API"
+                    }
                 )
-                if (isOllama) {
+                if (provider == "astra") {
+                    Text(
+                        "API própria da Astra, sem chave. Endereço padrão deste computador: http://192.168.1.3:8080/v1. O celular e o computador precisam estar no mesmo Wi-Fi, com o PC ligado e o Ollama ativo.",
+                        color = Muted,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
+                } else if (isOllama) {
                     Text(
                         "No computador, permita conexões do Ollama pela rede local. Informe o IP do computador e a porta 11434 (ex.: http://192.168.1.20:11434), além de um modelo instalado. Celular e computador precisam estar no mesmo Wi-Fi. 127.0.0.1 aponta para o próprio celular. Não exponha o Ollama à internet.",
                         color = Muted,
@@ -560,8 +578,10 @@ private fun SettingsDialog(
                         lineHeight = 15.sp
                     )
                 }
-                SettingsField(value = model, onChange = { model = it }, label = "Modelo")
-                if (!isOllama) {
+                if (provider != "astra") {
+                    SettingsField(value = model, onChange = { model = it }, label = "Modelo")
+                }
+                if (provider == "openai") {
                     BasicTextField(
                         value = apiKey,
                         onValueChange = { apiKey = it; clearKey = false },
@@ -597,12 +617,16 @@ private fun SettingsDialog(
                     validationError = "Informe um endereço http:// ou https:// válido."
                 } else if (isOllama && parsed.host.lowercase() in listOf("localhost", "127.0.0.1", "::1")) {
                     validationError = "127.0.0.1 é o próprio celular. Informe o IP local do computador que está rodando o Ollama."
+                } else if (provider == "astra" && !isPrivateIpv4(parsed.host)) {
+                    validationError = "A API própria da Astra só aceita um endereço IPv4 privado da rede local."
                 } else if (model.isBlank()) {
                     validationError = "Informe o nome do modelo."
-                } else if (!isOllama && apiKey.isBlank() && initial.apiKey.isBlank()) {
+                } else if (provider == "openai" && apiKey.isBlank() && initial.apiKey.isBlank()) {
                     validationError = "Informe a chave da API."
-                } else if (!isOllama && parsed.protocol != "https") {
+                } else if (provider == "openai" && parsed.protocol != "https") {
                     validationError = "Use HTTPS para proteger sua chave da API."
+                } else if (provider == "astra" && parsed.protocol != "http") {
+                    validationError = "Na rede local, use o endereço HTTP do servidor Astra."
                 } else {
                     onSave(
                         AiSettings(
@@ -714,6 +738,7 @@ private fun requestAssistantReply(
     }
 
     val isOllama = settings.provider == "ollama"
+    val isAstra = settings.provider == "astra"
     val endpoint = settings.endpoint.trim().trimEnd('/')
     if (endpoint.isBlank()) {
         val providerHint = if (isOllama) {
@@ -728,7 +753,13 @@ private fun requestAssistantReply(
     if (isOllama && parsedEndpoint.host.lowercase() in listOf("localhost", "127.0.0.1", "::1")) {
         throw IllegalStateException("127.0.0.1 aponta para o próprio celular. Em ⚙ Configurações > Ollama, informe o IP do computador (ex.: http://192.168.1.20:11434). Os dois aparelhos precisam estar no mesmo Wi-Fi e o Ollama deve aceitar conexões da rede local.")
     }
-    if (!isOllama && parsedEndpoint.protocol != "https") {
+    if (isAstra && !isPrivateIpv4(parsedEndpoint.host)) {
+        throw IllegalStateException("A API própria da Astra precisa estar em um endereço IPv4 privado da rede local.")
+    }
+    if (isAstra && parsedEndpoint.protocol != "http") {
+        throw IllegalStateException("Na rede local, use o endereço HTTP do servidor Astra.")
+    }
+    if (!isOllama && !isAstra && parsedEndpoint.protocol != "https") {
         throw IllegalStateException("Use HTTPS para proteger sua chave da API.")
     }
     val url = if (isOllama) {
@@ -746,6 +777,7 @@ private fun requestAssistantReply(
             .put("model", settings.model)
             .put("messages", conversation)
             .put("stream", false)
+            .put("educationMode", educationMode)
     }
 
     val connection = (URL(url).openConnection() as HttpURLConnection).apply {
@@ -754,7 +786,7 @@ private fun requestAssistantReply(
         readTimeout = 90_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
-        if (!isOllama) {
+        if (!isOllama && !isAstra) {
             if (settings.apiKey.isBlank()) throw IllegalStateException("Configure uma chave da API em Configurações.")
             setRequestProperty("Authorization", "Bearer ${settings.apiKey}")
         }
@@ -787,8 +819,15 @@ private fun requestAssistantReply(
 }
 
 private fun readSettings(preferences: android.content.SharedPreferences): AiSettings {
-    val provider = preferences.getString("provider", "ollama") ?: "ollama"
-    val providerSettings = readProviderSettings(preferences, provider)
+    val savedProvider = preferences.getString("provider", "astra") ?: "astra"
+    val savedSettings = readProviderSettings(preferences, savedProvider)
+    val migrateToAstra = savedProvider == "ollama" && savedSettings.first.isBlank()
+    val provider = if (migrateToAstra) "astra" else savedProvider
+    val providerSettings = if (migrateToAstra) {
+        readProviderSettings(preferences, "astra")
+    } else {
+        savedSettings
+    }
     return AiSettings(
         provider = provider,
         endpoint = providerSettings.first,
@@ -801,11 +840,20 @@ private fun readProviderSettings(
     preferences: android.content.SharedPreferences,
     provider: String
 ): Pair<String, String> {
+    val prefix = when (provider) {
+        "ollama" -> "ollama"
+        "astra" -> "astra"
+        else -> "openai"
+    }
     val isOllama = provider == "ollama"
-    val endpointKey = if (isOllama) "ollama-endpoint" else "openai-endpoint"
-    val modelKey = if (isOllama) "ollama-model" else "openai-model"
-    val defaultEndpoint = if (isOllama) "" else "https://api.openai.com/v1"
-    val defaultModel = if (isOllama) "qwen2.5:3b" else "gpt-4o-mini"
+    val endpointKey = "$prefix-endpoint"
+    val modelKey = "$prefix-model"
+    val defaultEndpoint = when (provider) {
+        "ollama" -> ""
+        "astra" -> ASTRA_API_DEFAULT_ENDPOINT
+        else -> "https://api.openai.com/v1"
+    }
+    val defaultModel = if (provider == "openai") "gpt-4o-mini" else "qwen2.5:3b"
     val legacyProvider = preferences.getString("provider", "ollama")
     val legacyEndpoint = if (legacyProvider == provider) preferences.getString("endpoint", null) else null
     val legacyModel = if (legacyProvider == provider) preferences.getString("model", null) else null
@@ -818,10 +866,22 @@ private fun readProviderSettings(
     )
 }
 
+private fun isPrivateIpv4(host: String): Boolean {
+    val octets = host.split('.').mapNotNull(String::toIntOrNull)
+    if (octets.size != 4 || octets.any { it !in 0..255 }) return false
+    return octets[0] == 10 ||
+        (octets[0] == 172 && octets[1] in 16..31) ||
+        (octets[0] == 192 && octets[1] == 168)
+}
+
 private fun saveSettings(preferences: android.content.SharedPreferences, settings: AiSettings) {
     val previousProvider = preferences.getString("provider", "ollama") ?: "ollama"
     if (previousProvider != settings.provider) {
-        val previousPrefix = if (previousProvider == "ollama") "ollama" else "openai"
+        val previousPrefix = when (previousProvider) {
+            "ollama" -> "ollama"
+            "astra" -> "astra"
+            else -> "openai"
+        }
         val migration = preferences.edit()
         if (!preferences.contains("$previousPrefix-endpoint")) {
             preferences.getString("endpoint", null)?.let {
@@ -835,7 +895,11 @@ private fun saveSettings(preferences: android.content.SharedPreferences, setting
         }
         migration.apply()
     }
-    val prefix = if (settings.provider == "ollama") "ollama" else "openai"
+    val prefix = when (settings.provider) {
+        "ollama" -> "ollama"
+        "astra" -> "astra"
+        else -> "openai"
+    }
     preferences.edit()
         .putString("provider", settings.provider)
         .putString("endpoint", settings.endpoint)
