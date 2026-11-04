@@ -550,11 +550,11 @@ private fun SettingsDialog(
                 SettingsField(
                     value = endpoint,
                     onChange = { endpoint = it },
-                    label = if (isOllama) "Endereço do Ollama" else "Endereço da API"
+                    label = if (isOllama) "http://192.168.1.20:11434" else "Endereço da API"
                 )
                 if (isOllama) {
                     Text(
-                        "Informe http://IP-DO-COMPUTADOR:11434 e o nome de um modelo instalado. O endereço fica salvo neste celular; 127.0.0.1 aponta para o próprio celular. Os dois dispositivos precisam estar na mesma rede Wi-Fi. Não exponha o Ollama à internet.",
+                        "No computador, permita conexões do Ollama pela rede local. Informe o IP do computador e a porta 11434 (ex.: http://192.168.1.20:11434), além de um modelo instalado. Celular e computador precisam estar no mesmo Wi-Fi. 127.0.0.1 aponta para o próprio celular. Não exponha o Ollama à internet.",
                         color = Muted,
                         fontSize = 11.sp,
                         lineHeight = 15.sp
@@ -595,6 +595,8 @@ private fun SettingsDialog(
                 val parsed = runCatching { URL(endpoint.trim()) }.getOrNull()
                 if (parsed == null || parsed.protocol !in listOf("https", "http")) {
                     validationError = "Informe um endereço http:// ou https:// válido."
+                } else if (isOllama && parsed.host.lowercase() in listOf("localhost", "127.0.0.1", "::1")) {
+                    validationError = "127.0.0.1 é o próprio celular. Informe o IP local do computador que está rodando o Ollama."
                 } else if (model.isBlank()) {
                     validationError = "Informe o nome do modelo."
                 } else if (!isOllama && apiKey.isBlank() && initial.apiKey.isBlank()) {
@@ -712,13 +714,27 @@ private fun requestAssistantReply(
     }
 
     val isOllama = settings.provider == "ollama"
-    if (!isOllama && URL(settings.endpoint).protocol != "https") {
+    val endpoint = settings.endpoint.trim().trimEnd('/')
+    if (endpoint.isBlank()) {
+        val providerHint = if (isOllama) {
+            "Configure o endereço do Ollama em ⚙ Configurações. Use o IP local do computador, por exemplo http://192.168.1.20:11434."
+        } else {
+            "Configure o endereço da API em ⚙ Configurações."
+        }
+        throw IllegalStateException(providerHint)
+    }
+    val parsedEndpoint = runCatching { URL(endpoint) }.getOrNull()
+        ?: throw IllegalStateException("O endereço do servidor é inválido. Confira ⚙ Configurações.")
+    if (isOllama && parsedEndpoint.host.lowercase() in listOf("localhost", "127.0.0.1", "::1")) {
+        throw IllegalStateException("127.0.0.1 aponta para o próprio celular. Em ⚙ Configurações > Ollama, informe o IP do computador (ex.: http://192.168.1.20:11434). Os dois aparelhos precisam estar no mesmo Wi-Fi e o Ollama deve aceitar conexões da rede local.")
+    }
+    if (!isOllama && parsedEndpoint.protocol != "https") {
         throw IllegalStateException("Use HTTPS para proteger sua chave da API.")
     }
     val url = if (isOllama) {
-        "${settings.endpoint}/api/chat"
+        "$endpoint/api/chat"
     } else {
-        "${settings.endpoint}/chat/completions"
+        "$endpoint/chat/completions"
     }
     val payload = if (isOllama) {
         JSONObject()
@@ -788,14 +804,17 @@ private fun readProviderSettings(
     val isOllama = provider == "ollama"
     val endpointKey = if (isOllama) "ollama-endpoint" else "openai-endpoint"
     val modelKey = if (isOllama) "ollama-model" else "openai-model"
-    val defaultEndpoint = if (isOllama) "http://127.0.0.1:11434" else "https://api.openai.com/v1"
+    val defaultEndpoint = if (isOllama) "" else "https://api.openai.com/v1"
     val defaultModel = if (isOllama) "qwen2.5:3b" else "gpt-4o-mini"
     val legacyProvider = preferences.getString("provider", "ollama")
     val legacyEndpoint = if (legacyProvider == provider) preferences.getString("endpoint", null) else null
     val legacyModel = if (legacyProvider == provider) preferences.getString("model", null) else null
+    val endpoint = preferences.getString(endpointKey, null) ?: legacyEndpoint ?: defaultEndpoint
+    val model = preferences.getString(modelKey, null) ?: legacyModel ?: defaultModel
+    val normalizedEndpoint = endpoint.trimEnd('/')
     return Pair(
-        preferences.getString(endpointKey, null) ?: legacyEndpoint ?: defaultEndpoint,
-        preferences.getString(modelKey, null) ?: legacyModel ?: defaultModel
+        if (isOllama && normalizedEndpoint in listOf("http://127.0.0.1:11434", "http://localhost:11434")) "" else endpoint,
+        model
     )
 }
 

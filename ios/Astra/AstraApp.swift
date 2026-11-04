@@ -17,7 +17,7 @@ private enum AIProvider: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String { self == .ollama ? "Ollama" : "API compatível" }
     var defaultEndpoint: String {
-        self == .ollama ? "http://127.0.0.1:11434" : "https://api.openai.com/v1"
+        self == .ollama ? "" : "https://api.openai.com/v1"
     }
     var defaultModel: String { self == .ollama ? "qwen2.5:3b" : "gpt-4o-mini" }
 }
@@ -38,9 +38,10 @@ private struct AISettings {
         let defaults = UserDefaults.standard
         let provider = AIProvider(rawValue: defaults.string(forKey: "astra.provider") ?? "") ?? .ollama
         let prefix = provider.rawValue
+        let savedEndpoint = defaults.string(forKey: "astra.\(prefix).endpoint") ?? provider.defaultEndpoint
         return AISettings(
             provider: provider,
-            endpoint: defaults.string(forKey: "astra.\(prefix).endpoint") ?? provider.defaultEndpoint,
+            endpoint: provider == .ollama && ["http://127.0.0.1:11434", "http://localhost:11434"].contains(savedEndpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/"))) ? "" : savedEndpoint,
             model: defaults.string(forKey: "astra.\(prefix).model") ?? provider.defaultModel,
             apiKey: KeychainStore.read() ?? ""
         )
@@ -413,7 +414,8 @@ private struct SettingsDraft {
     init() {
         let defaults = UserDefaults.standard
         provider = AIProvider(rawValue: defaults.string(forKey: "astra.provider") ?? "") ?? .ollama
-        ollamaEndpoint = defaults.string(forKey: "astra.ollama.endpoint") ?? AIProvider.ollama.defaultEndpoint
+        let savedOllamaEndpoint = defaults.string(forKey: "astra.ollama.endpoint") ?? AIProvider.ollama.defaultEndpoint
+        ollamaEndpoint = ["http://127.0.0.1:11434", "http://localhost:11434"].contains(savedOllamaEndpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/"))) ? "" : savedOllamaEndpoint
         ollamaModel = defaults.string(forKey: "astra.ollama.model") ?? AIProvider.ollama.defaultModel
         apiEndpoint = defaults.string(forKey: "astra.openai.endpoint") ?? AIProvider.openAI.defaultEndpoint
         apiModel = defaults.string(forKey: "astra.openai.model") ?? AIProvider.openAI.defaultModel
@@ -449,7 +451,7 @@ private struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    TextField("Endereço do servidor", text: $draft.endpoint)
+                    TextField(draft.provider == .ollama ? "http://192.168.1.20:11434" : "Endereço do servidor", text: $draft.endpoint)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
@@ -458,7 +460,7 @@ private struct SettingsView: View {
                         .autocorrectionDisabled()
 
                     if draft.provider == .ollama {
-                        Text("Use http://IP-DO-COMPUTADOR:11434 e um modelo instalado. O endereço fica salvo neste iPhone. 127.0.0.1 aponta para o próprio iPhone; os dois dispositivos precisam estar na mesma rede Wi-Fi. Não exponha o Ollama à internet.")
+                        Text("No computador, permita conexões do Ollama pela rede local. Informe o IP do computador e a porta 11434 (ex.: http://192.168.1.20:11434), além de um modelo instalado. iPhone e computador precisam estar no mesmo Wi-Fi. 127.0.0.1 aponta para o próprio iPhone. Não exponha o Ollama à internet.")
                             .font(.footnote)
                             .foregroundStyle(AstraStyle.muted)
                     } else {
@@ -498,11 +500,16 @@ private struct SettingsView: View {
     }
 
     private func save() {
-        guard let url = URL(string: draft.endpoint.trimmingCharacters(in: .whitespacesAndNewlines)),
+        let endpoint = draft.endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: endpoint),
               let scheme = url.scheme?.lowercased(),
               ["http", "https"].contains(scheme),
               url.host != nil else {
             validationError = "Informe um endereço http:// ou https:// válido."
+            return
+        }
+        if draft.provider == .ollama, ["localhost", "127.0.0.1", "::1"].contains(url.host?.lowercased() ?? "") {
+            validationError = "127.0.0.1 é o próprio iPhone. Informe o IP local do computador que está rodando o Ollama."
             return
         }
         guard !draft.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -539,9 +546,18 @@ private struct SettingsView: View {
 private enum AstraClient {
     static func reply(settings: AISettings, history: [ChatMessage], educationMode: Bool) async throws -> String {
         let endpoint = settings.endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard !endpoint.isEmpty else {
+            let hint = settings.provider == .ollama
+                ? "Configure o endereço do Ollama em Ajustes. Use o IP local do computador, por exemplo http://192.168.1.20:11434."
+                : "Configure o endereço da API em Ajustes."
+            throw AstraError.message(hint)
+        }
         let path = settings.provider == .ollama ? "/api/chat" : "/chat/completions"
         guard let url = URL(string: endpoint + path) else {
             throw AstraError.message("O endereço do servidor é inválido.")
+        }
+        if settings.provider == .ollama, ["localhost", "127.0.0.1", "::1"].contains(url.host?.lowercased() ?? "") {
+            throw AstraError.message("127.0.0.1 aponta para o próprio iPhone. Em Ajustes > Ollama, informe o IP do computador (ex.: http://192.168.1.20:11434). Os dois aparelhos precisam estar no mesmo Wi-Fi e o Ollama deve aceitar conexões da rede local.")
         }
         if settings.provider == .openAI, url.scheme != "https" {
             throw AstraError.message("Use HTTPS para proteger sua chave da API.")
