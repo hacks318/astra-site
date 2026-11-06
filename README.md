@@ -63,12 +63,12 @@ Ative **Modo Educação** no topo da janela para receber explicações defensiva
 
 ## Astra para Android
 
-O app Android inclui o provedor **Astra**, que usa a API própria no computador pela rede local sem pedir chave. O provedor, endereço e modelo ficam salvos no celular; também é possível escolher Ollama ou uma API compatível. O histórico da conversa não é persistido.
+O app Android inclui o provedor **Astra**, que usa a API própria sem pedir chave. Para usar um computador na rede local, informe o endereço HTTP privado e mantenha os aparelhos no mesmo Wi-Fi; para acessar pela internet móvel, informe o endereço HTTPS da API publicada (por exemplo, o domínio configurado no Caddy). HTTP fora de um IPv4 privado é recusado. O provedor, endereço e modelo ficam salvos no celular; também é possível escolher Ollama ou uma API compatível. O histórico da conversa não é persistido.
 
-O workflow **Build Astra Android APK** compila o projeto no GitHub Actions e publica o APK de depuração como artefato da execução. O APK de depuração serve para testes; uma versão assinada para distribuição pública requer uma chave de assinatura de lançamento protegida.
+O workflow **Build Astra Android APK** compila o projeto no GitHub Actions, publica o APK de depuração como artefato da execução e atualiza o download Android no GitHub Pages. O APK de depuração serve para testes; uma versão assinada para distribuição pública requer uma chave de assinatura de lançamento protegida.
 
 ## Astra para iOS
 
-O protótipo iOS inclui chat, Modo Educação, conexão à API própria da Astra na rede local, além de Ollama e API compatível. As configurações ficam salvas no aparelho; a chave de API compatível é guardada no Keychain.
+O protótipo iOS inclui chat, Modo Educação, conexão à API própria da Astra na rede local ou publicada com HTTPS, além de Ollama e API compatível. Para uso local, informe o endereço HTTP privado e mantenha os aparelhos no mesmo Wi-Fi; para acesso pela internet móvel, use o endereço HTTPS publicado. As configurações ficam salvas no aparelho; a chave de API compatível é guardada no Keychain.
 
 O workflow **Build Astra iOS** verifica a compilação para o simulador e publica o app como artefato de teste. Para instalar em um iPhone ou publicar na App Store, ainda é necessário assinar o app com uma conta Apple Developer; a compilação do simulador não é instalável em um iPhone.

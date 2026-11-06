@@ -533,7 +533,7 @@ private fun SettingsDialog(
         title = { Text("Conectar sua IA") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Astra usa o modelo próprio no computador conectado à rede. Mantenha o PC ligado e os aparelhos no mesmo Wi-Fi.", color = Muted, fontSize = 12.sp)
+                Text("Conecte a uma API Astra publicada com HTTPS ou ao servidor no computador pela rede Wi-Fi local.", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterButton("Astra", provider == "astra") {
                         provider = "astra"
@@ -565,7 +565,7 @@ private fun SettingsDialog(
                 )
                 if (provider == "astra") {
                     Text(
-                        "API própria da Astra, sem chave. Endereço padrão deste computador: http://192.168.1.3:8080/v1. O celular e o computador precisam estar no mesmo Wi-Fi, com o PC ligado e o Ollama ativo.",
+                        "API própria sem chave. Na rede local, use o endereço HTTP do computador (mesmo Wi-Fi). Para acessar de qualquer rede, use o endereço HTTPS da API publicada.",
                         color = Muted,
                         fontSize = 11.sp,
                         lineHeight = 15.sp
@@ -617,16 +617,14 @@ private fun SettingsDialog(
                     validationError = "Informe um endereço http:// ou https:// válido."
                 } else if (isOllama && parsed.host.lowercase() in listOf("localhost", "127.0.0.1", "::1")) {
                     validationError = "127.0.0.1 é o próprio celular. Informe o IP local do computador que está rodando o Ollama."
-                } else if (provider == "astra" && !isPrivateIpv4(parsed.host)) {
-                    validationError = "A API própria da Astra só aceita um endereço IPv4 privado da rede local."
+                } else if (provider == "astra" && !isValidAstraApiEndpoint(parsed)) {
+                    validationError = "Use HTTPS para uma API publicada ou HTTP com o IPv4 privado do computador na rede local."
                 } else if (model.isBlank()) {
                     validationError = "Informe o nome do modelo."
                 } else if (provider == "openai" && apiKey.isBlank() && initial.apiKey.isBlank()) {
                     validationError = "Informe a chave da API."
                 } else if (provider == "openai" && parsed.protocol != "https") {
                     validationError = "Use HTTPS para proteger sua chave da API."
-                } else if (provider == "astra" && parsed.protocol != "http") {
-                    validationError = "Na rede local, use o endereço HTTP do servidor Astra."
                 } else {
                     onSave(
                         AiSettings(
@@ -753,11 +751,8 @@ private fun requestAssistantReply(
     if (isOllama && parsedEndpoint.host.lowercase() in listOf("localhost", "127.0.0.1", "::1")) {
         throw IllegalStateException("127.0.0.1 aponta para o próprio celular. Em ⚙ Configurações > Ollama, informe o IP do computador (ex.: http://192.168.1.20:11434). Os dois aparelhos precisam estar no mesmo Wi-Fi e o Ollama deve aceitar conexões da rede local.")
     }
-    if (isAstra && !isPrivateIpv4(parsedEndpoint.host)) {
-        throw IllegalStateException("A API própria da Astra precisa estar em um endereço IPv4 privado da rede local.")
-    }
-    if (isAstra && parsedEndpoint.protocol != "http") {
-        throw IllegalStateException("Na rede local, use o endereço HTTP do servidor Astra.")
+    if (isAstra && !isValidAstraApiEndpoint(parsedEndpoint)) {
+        throw IllegalStateException("Use HTTPS para uma API publicada ou HTTP com o IPv4 privado do computador na rede local.")
     }
     if (!isOllama && !isAstra && parsedEndpoint.protocol != "https") {
         throw IllegalStateException("Use HTTPS para proteger sua chave da API.")
@@ -873,6 +868,9 @@ private fun isPrivateIpv4(host: String): Boolean {
         (octets[0] == 172 && octets[1] in 16..31) ||
         (octets[0] == 192 && octets[1] == 168)
 }
+
+private fun isValidAstraApiEndpoint(url: URL): Boolean =
+    url.protocol == "https" || (url.protocol == "http" && isPrivateIpv4(url.host))
 
 private fun saveSettings(preferences: android.content.SharedPreferences, settings: AiSettings) {
     val previousProvider = preferences.getString("provider", "ollama") ?: "ollama"

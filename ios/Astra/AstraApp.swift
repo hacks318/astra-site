@@ -495,7 +495,7 @@ private struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("Provedor de IA") {
-                    Text("Astra usa o modelo próprio no computador conectado à rede. Mantenha o PC ligado e os aparelhos no mesmo Wi-Fi.")
+                    Text("Conecte a uma API Astra publicada com HTTPS ou ao servidor no computador pela rede Wi-Fi local.")
                         .font(.footnote)
                         .foregroundStyle(AstraStyle.muted)
                     Picker("Provedor", selection: $draft.provider) {
@@ -518,7 +518,7 @@ private struct SettingsView: View {
                     }
 
                     if draft.provider == .astra {
-                        Text("API própria da Astra, sem chave. Endereço padrão deste computador: http://192.168.1.3:8080/v1. iPhone e computador precisam estar no mesmo Wi-Fi, com o PC ligado e o Ollama ativo.")
+                        Text("API própria sem chave. Na rede local, use o endereço HTTP do computador (mesmo Wi-Fi). Para acessar de qualquer rede, use o endereço HTTPS da API publicada.")
                             .font(.footnote)
                             .foregroundStyle(AstraStyle.muted)
                     } else if draft.provider == .ollama {
@@ -570,8 +570,8 @@ private struct SettingsView: View {
             validationError = "Informe um endereço http:// ou https:// válido."
             return
         }
-        if draft.provider == .astra, !isPrivateIPv4(url.host ?? "") {
-            validationError = "A API própria da Astra só aceita um endereço IPv4 privado da rede local."
+        if draft.provider == .astra, !isValidAstraAPIEndpoint(url) {
+            validationError = "Use HTTPS para uma API publicada ou HTTP com o IPv4 privado do computador na rede local."
             return
         }
         if draft.provider == .ollama, ["localhost", "127.0.0.1", "::1"].contains(url.host?.lowercased() ?? "") {
@@ -580,10 +580,6 @@ private struct SettingsView: View {
         }
         guard !draft.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             validationError = "Informe o nome do modelo."
-            return
-        }
-        if draft.provider == .astra, scheme != "http" {
-            validationError = "Na rede local, use o endereço HTTP do servidor Astra."
             return
         }
         if draft.provider == .openAI {
@@ -634,14 +630,11 @@ private enum AstraClient {
         guard let url = URL(string: endpoint + path) else {
             throw AstraError.message("O endereço do servidor é inválido.")
         }
-        if settings.provider == .astra, !isPrivateIPv4(url.host ?? "") {
-            throw AstraError.message("A API própria da Astra só pode ser acessada em um endereço IPv4 privado da rede local.")
-        }
         if settings.provider == .ollama, ["localhost", "127.0.0.1", "::1"].contains(url.host?.lowercased() ?? "") {
             throw AstraError.message("127.0.0.1 aponta para o próprio iPhone. Em Ajustes > Ollama, informe o IP do computador (ex.: http://192.168.1.20:11434). Os dois aparelhos precisam estar no mesmo Wi-Fi e o Ollama deve aceitar conexões da rede local.")
         }
-        if settings.provider == .astra, url.scheme != "http" {
-            throw AstraError.message("Na rede local, use o endereço HTTP do servidor Astra.")
+        if settings.provider == .astra, !isValidAstraAPIEndpoint(url) {
+            throw AstraError.message("Use HTTPS para uma API publicada ou HTTP com o IPv4 privado do computador na rede local.")
         }
         if settings.provider == .openAI, url.scheme != "https" {
             throw AstraError.message("Use HTTPS para proteger sua chave da API.")
@@ -708,6 +701,11 @@ private func isPrivateIPv4(_ host: String) -> Bool {
     return octets[0] == 10 ||
         (octets[0] == 172 && (16...31).contains(octets[1])) ||
         (octets[0] == 192 && octets[1] == 168)
+}
+
+private func isValidAstraAPIEndpoint(_ url: URL) -> Bool {
+    if url.scheme?.lowercased() == "https" { return true }
+    return url.scheme?.lowercased() == "http" && isPrivateIPv4(url.host ?? "")
 }
 
 private enum KeychainStore {

@@ -10,6 +10,12 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -49,6 +55,12 @@ jobs:
         working-directory: mobile
         run: gradle assembleDebug
 
+      - name: Prepare download site
+        shell: bash
+        run: |
+          mkdir -p site/downloads
+          cp mobile/app/build/outputs/apk/debug/app-debug.apk site/downloads/Astra-Android-debug.apk
+
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
@@ -56,3 +68,17 @@ jobs:
           path: mobile/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload site files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publish site
+        id: deployment
+        uses: actions/deploy-pages@v4
