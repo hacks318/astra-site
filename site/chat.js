@@ -11,9 +11,7 @@ const STORAGE_KEY = "astra-local-conversations";
 let conversations = loadConversations();
 let activeChatId = "";
 let isSending = false;
-let nextRequestId = 0;
-const modelWorker = new Worker("./chat-worker.js", { type: "module" });
-const pendingRequests = new Map();
+let modelPromise;
 
 function loadConversations() {
   try {
@@ -94,35 +92,20 @@ function updateConversation(messages) {
   renderChatList();
 }
 
-function requestModel(messages) {
-  const requestId = String(++nextRequestId);
-  return new Promise((resolve, reject) => {
-    pendingRequests.set(requestId, { resolve, reject });
-    modelWorker.postMessage({ type: "generate", requestId, messages });
+async function requestModel(messages) {
+  if (!modelPromise) {
+    modelPromise = import("./chat-model.js").catch((error) => {
+      modelPromise = undefined;
+      throw new Error(
+        `Não foi possível carregar a IA local (${error.message || error.name || "erro desconhecido"}). Confira sua conexão e tente novamente.`
+      );
+    });
+  }
+  const { generateLocalReply } = await modelPromise;
+  return generateLocalReply(messages, (status) => {
+    modelStatus.textContent = status;
   });
 }
-
-modelWorker.addEventListener("message", (event) => {
-  const { type, requestId, message, result } = event.data || {};
-  if (type === "status") {
-    modelStatus.textContent = message;
-    return;
-  }
-  const pending = pendingRequests.get(requestId);
-  if (!pending) return;
-  pendingRequests.delete(requestId);
-  if (type === "result") pending.resolve(result);
-  else if (type === "error") pending.reject(new Error(message));
-});
-
-modelWorker.addEventListener("error", (event) => {
-  chatError.textContent = `A IA local falhou ao iniciar: ${event.message}`;
-  modelStatus.textContent = "Não foi possível iniciar a IA local.";
-  for (const pending of pendingRequests.values()) {
-    pending.reject(new Error(event.message || "Falha ao iniciar o modelo local."));
-  }
-  pendingRequests.clear();
-});
 
 document.getElementById("new-chat").addEventListener("click", () => {
   activeChatId = "";
@@ -153,7 +136,7 @@ composer.addEventListener("submit", async (event) => {
     updateConversation(updatedHistory);
     appendMessage("assistant", reply);
   } catch (error) {
-    chatError.textContent = error.message;
+    chatError.textContent = error.message || "A IA local encontrou um erro desconhecido.";
     modelStatus.textContent = "A IA local está indisponível. Tente novamente.";
   } finally {
     isSending = false;
