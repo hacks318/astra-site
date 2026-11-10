@@ -18,11 +18,13 @@ O site fica em `site/`. O GitHub Pages publica a versão estática para download
 
 No servidor próprio, abra `https://<dominio-da-api>/` para downloads e `https://<dominio-da-api>/chat.html` para conversar no celular.
 
-## Conta Astra e conversas sincronizadas
+## Astra no navegador
 
-O site móvel em `site/chat.html` e o app Windows podem entrar na mesma conta Astra. Crie a conta no site mobile e informe o mesmo endereço da API e as mesmas credenciais no botão **Entrar e sincronizar** do app Windows. Conversas feitas com a conta conectada ficam salvas na API e aparecem nos dois dispositivos. Sem uma API publicada, o site funciona somente em desenvolvimento/local; conversas sem login continuam apenas no computador.
+O chat web (`site/chat.html`) executa um modelo quantizado de IA no próprio navegador usando WebGPU quando disponível, sem login, chave de API ou servidor de inferência. Na primeira mensagem, o navegador baixa o modelo do Hugging Face (aproximadamente 500 MB com WebGPU ou 800 MB com CPU) e pode armazená-lo em cache. A conversa fica salva apenas no armazenamento local desse navegador e não é sincronizada com o Windows. A velocidade e a disponibilidade dependem do aparelho e do suporte a WebGPU; o modelo compacto pode errar.
 
-Publique a API seguindo os passos abaixo antes de criar a conta. No site servido pelo próprio backend, o endereço da API é preenchido automaticamente. No app Windows, use o endereço do servidor com `/v1` no final. As senhas são armazenadas com hash e salt; tokens de sessão têm validade de 30 dias. Ainda não há recuperação de senha, então mantenha a senha em local seguro. O histórico fica no volume Docker `astra_data`; faça backup desse volume junto com os dados do servidor.
+## Conta Windows e conversas sincronizadas
+
+O login e o histórico sincronizado no app Windows continuam disponíveis quando você hospeda a API própria abaixo. Use o mesmo endereço da API e as mesmas credenciais nos computadores Windows. O chat do navegador é independente e mantém conversas somente no aparelho; não compartilha o login ou o histórico com o Windows.
 
 ## API própria para os apps móveis
 

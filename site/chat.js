@@ -1,15 +1,3 @@
-const authView = document.getElementById("auth-view");
-const chatView = document.getElementById("chat-view");
-const authForm = document.getElementById("auth-form");
-const authError = document.getElementById("auth-error");
-const apiUrlInput = document.getElementById("api-url");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const passwordConfirm = document.getElementById("password-confirm");
-const confirmWrap = document.getElementById("confirm-wrap");
-const authTitle = document.getElementById("auth-title");
-const authSubmit = document.getElementById("auth-submit");
-const authMode = document.getElementById("auth-mode");
 const messagesElement = document.getElementById("messages");
 const emptyState = document.getElementById("empty-state");
 const composer = document.getElementById("composer");
@@ -17,78 +5,51 @@ const messageInput = document.getElementById("message-input");
 const sendButton = document.getElementById("send-button");
 const chatError = document.getElementById("chat-error");
 const chatList = document.getElementById("chat-list");
+const modelStatus = document.getElementById("model-status");
+const STORAGE_KEY = "astra-local-conversations";
 
-let isRegistering = false;
-let isSending = false;
-let token = localStorage.getItem("astra-account-token") || "";
-const defaultApiBase = location.hostname.endsWith(".github.io")
-  ? ""
-  : `${location.origin}/v1`;
-let apiBase = localStorage.getItem("astra-account-api") || defaultApiBase;
+let conversations = loadConversations();
 let activeChatId = "";
-let history = [];
-let currentUser = null;
+let isSending = false;
+let nextRequestId = 0;
+const modelWorker = new Worker("./chat-worker.js", { type: "module" });
+const pendingRequests = new Map();
 
-apiUrlInput.value = apiBase;
-
-function normalizedApiBase(value) {
-  const parsed = new URL(value.trim());
-  if (
-    !["http:", "https:"].includes(parsed.protocol) ||
-    (parsed.protocol === "http:" && !["localhost", "127.0.0.1", "::1"].includes(parsed.hostname))
-  ) {
-    throw new Error("Use HTTPS para a API publicada ou HTTP somente em localhost.");
-  }
-  return parsed.href.replace(/\/+$/, "");
-}
-
-async function apiRequest(route, { method = "GET", body, authenticated = true } = {}) {
-  const headers = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (authenticated && token) headers.Authorization = `Bearer ${token}`;
-  let response;
+function loadConversations() {
   try {
-    response = await fetch(`${apiBase}${route}`, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body)
-    });
-  } catch {
-    throw new Error("Não foi possível conectar à API. Confira o endereço, o HTTPS e o CORS do servidor.");
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(saved) ? saved.filter((chat) =>
+      typeof chat.id === "string" &&
+      Array.isArray(chat.messages) &&
+      chat.messages.every((message) =>
+        message && ["user", "assistant"].includes(message.role) && typeof message.content === "string"
+      )
+    ) : [];
+  } catch (error) {
+    chatError.textContent = `Não foi possível ler o histórico salvo: ${error.message}`;
+    return [];
   }
-  let result;
+}
+
+function persistConversations() {
   try {
-    result = await response.json();
-  } catch {
-    throw new Error("A API retornou uma resposta inválida.");
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+  } catch (error) {
+    chatError.textContent = `Não foi possível salvar neste aparelho: ${error.message}`;
   }
-  if (!response.ok) throw new Error(result.error || `A API respondeu ${response.status}.`);
-  return result;
 }
 
-function setAuthMode(registering) {
-  isRegistering = registering;
-  authTitle.textContent = registering ? "Crie sua conta" : "Entre na sua conta";
-  authSubmit.textContent = registering ? "Criar conta" : "Entrar";
-  authMode.textContent = registering
-    ? "Já tem conta? Entrar"
-    : "Ainda não tem conta? Criar conta";
-  confirmWrap.hidden = !registering;
-  passwordConfirm.required = registering;
-  passwordInput.autocomplete = registering ? "new-password" : "current-password";
-  authError.textContent = "";
-}
-
-async function renderChatList() {
-  const { chats } = await apiRequest("/chats");
+function renderChatList() {
   chatList.replaceChildren();
-  for (const chat of chats) {
+  for (const chat of [...conversations].reverse()) {
+    const firstMessage = chat.messages.find((message) => message.role === "user");
+    if (!firstMessage) continue;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `chat-item${chat.id === activeChatId ? " active" : ""}`;
-    button.textContent = chat.title;
-    button.title = chat.title;
-    button.addEventListener("click", () => loadChat(chat.id));
+    button.textContent = firstMessage.content;
+    button.title = firstMessage.content;
+    button.addEventListener("click", () => selectConversation(chat.id));
     chatList.append(button);
   }
 }
@@ -104,64 +65,63 @@ function appendMessage(role, content) {
 
 function showMessages(messages) {
   messagesElement.replaceChildren(emptyState);
-  history = messages.map(({ role, content }) => ({ role, content }));
-  emptyState.hidden = history.length > 0;
-  for (const message of history) appendMessage(message.role, message.content);
+  emptyState.hidden = messages.length > 0;
+  for (const message of messages) appendMessage(message.role, message.content);
 }
 
-async function loadChat(chatId) {
-  chatError.textContent = "";
-  try {
-    const { chat } = await apiRequest(`/chats/${chatId}`);
+function selectConversation(chatId) {
+  const chat = conversations.find((entry) => entry.id === chatId);
+  if (!chat) return;
+  activeChatId = chat.id;
+  showMessages(chat.messages);
+  renderChatList();
+}
+
+function updateConversation(messages) {
+  const now = Date.now();
+  let chat = conversations.find((entry) => entry.id === activeChatId);
+  if (!chat) {
+    const id = typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${now}-${Math.random().toString(16).slice(2)}`;
+    chat = { id, createdAt: now, updatedAt: now, messages: [] };
+    conversations.push(chat);
     activeChatId = chat.id;
-    showMessages(chat.messages);
-    await renderChatList();
-  } catch (error) {
-    chatError.textContent = error.message;
   }
+  chat.messages = messages;
+  chat.updatedAt = now;
+  persistConversations();
+  renderChatList();
 }
 
-async function showAccount() {
-  authView.hidden = true;
-  chatView.hidden = false;
-  document.getElementById("account-email").textContent = currentUser.email;
-  await renderChatList();
-  if (!activeChatId) showMessages([]);
+function requestModel(messages) {
+  const requestId = String(++nextRequestId);
+  return new Promise((resolve, reject) => {
+    pendingRequests.set(requestId, { resolve, reject });
+    modelWorker.postMessage({ type: "generate", requestId, messages });
+  });
 }
 
-authMode.addEventListener("click", () => setAuthMode(!isRegistering));
-
-authForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  authError.textContent = "";
-  authSubmit.disabled = true;
-  try {
-    apiBase = normalizedApiBase(apiUrlInput.value);
-    apiUrlInput.value = apiBase;
-    localStorage.setItem("astra-account-api", apiBase);
-    const email = emailInput.value.trim().toLowerCase();
-    const password = passwordInput.value;
-    if (isRegistering && password !== passwordConfirm.value) {
-      throw new Error("As senhas não conferem.");
-    }
-    const route = isRegistering ? "/auth/register" : "/auth/login";
-    const result = await apiRequest(route, {
-      method: "POST",
-      body: { email, password },
-      authenticated: false
-    });
-    token = result.token;
-    currentUser = result.user;
-    localStorage.setItem("astra-account-token", token);
-    passwordInput.value = "";
-    passwordConfirm.value = "";
-    activeChatId = "";
-    await showAccount();
-  } catch (error) {
-    authError.textContent = error.message;
-  } finally {
-    authSubmit.disabled = false;
+modelWorker.addEventListener("message", (event) => {
+  const { type, requestId, message, result } = event.data || {};
+  if (type === "status") {
+    modelStatus.textContent = message;
+    return;
   }
+  const pending = pendingRequests.get(requestId);
+  if (!pending) return;
+  pendingRequests.delete(requestId);
+  if (type === "result") pending.resolve(result);
+  else if (type === "error") pending.reject(new Error(message));
+});
+
+modelWorker.addEventListener("error", (event) => {
+  chatError.textContent = `A IA local falhou ao iniciar: ${event.message}`;
+  modelStatus.textContent = "Não foi possível iniciar a IA local.";
+  for (const pending of pendingRequests.values()) {
+    pending.reject(new Error(event.message || "Falha ao iniciar o modelo local."));
+  }
+  pendingRequests.clear();
 });
 
 document.getElementById("new-chat").addEventListener("click", () => {
@@ -169,57 +129,32 @@ document.getElementById("new-chat").addEventListener("click", () => {
   showMessages([]);
   chatError.textContent = "";
   messageInput.focus();
-  renderChatList().catch((error) => {
-    chatError.textContent = error.message;
-  });
+  renderChatList();
 });
-
-async function saveCurrentChat() {
-  if (!activeChatId) {
-    const result = await apiRequest("/chats", { method: "POST", body: {} });
-    activeChatId = result.chat.id;
-  }
-  await apiRequest(`/chats/${activeChatId}`, {
-    method: "PUT",
-    body: { messages: history }
-  });
-  await renderChatList();
-}
 
 composer.addEventListener("submit", async (event) => {
   event.preventDefault();
   const content = messageInput.value.trim();
   if (!content || isSending) return;
+
   isSending = true;
   sendButton.disabled = true;
   chatError.textContent = "";
   messageInput.value = "";
   messageInput.style.height = "auto";
-  history.push({ role: "user", content });
+
+  const chat = conversations.find((entry) => entry.id === activeChatId);
+  const history = [...(chat?.messages || []), { role: "user", content }];
   appendMessage("user", content);
   try {
-    await saveCurrentChat();
-    const { choices } = await apiRequest("/chat/completions", {
-      method: "POST",
-      body: {
-        messages: history.slice(-10),
-        educationMode: false
-      }
-    });
-    const reply = choices?.[0]?.message?.content;
-    if (typeof reply !== "string" || !reply.trim()) {
-      throw new Error("A API não retornou uma resposta de texto.");
-    }
-    history.push({ role: "assistant", content: reply.trim() });
-    appendMessage("assistant", reply.trim());
-    await saveCurrentChat();
+    updateConversation(history);
+    const reply = await requestModel(history.slice(-8));
+    const updatedHistory = [...history, { role: "assistant", content: reply }];
+    updateConversation(updatedHistory);
+    appendMessage("assistant", reply);
   } catch (error) {
     chatError.textContent = error.message;
-    try {
-      await saveCurrentChat();
-    } catch (saveError) {
-      chatError.textContent += ` Não foi possível sincronizar: ${saveError.message}`;
-    }
+    modelStatus.textContent = "A IA local está indisponível. Tente novamente.";
   } finally {
     isSending = false;
     sendButton.disabled = false;
@@ -239,37 +174,5 @@ messageInput.addEventListener("keydown", (event) => {
   }
 });
 
-document.getElementById("logout").addEventListener("click", async () => {
-  try {
-    await apiRequest("/auth/logout", { method: "POST", body: {} });
-  } catch (error) {
-    chatError.textContent = error.message;
-    return;
-  }
-  token = "";
-  currentUser = null;
-  activeChatId = "";
-  history = [];
-  localStorage.removeItem("astra-account-token");
-  chatView.hidden = true;
-  authView.hidden = false;
-  setAuthMode(false);
-});
-
-async function restoreSession() {
-  if (!token || !apiBase) return;
-  try {
-    apiBase = normalizedApiBase(apiBase);
-    apiUrlInput.value = apiBase;
-    currentUser = (await apiRequest("/auth/me")).user;
-    await showAccount();
-  } catch (error) {
-    authError.textContent = error.message;
-    if (error.message.includes("Entre na sua conta")) {
-      token = "";
-      localStorage.removeItem("astra-account-token");
-    }
-  }
-}
-
-restoreSession();
+showMessages([]);
+renderChatList();
