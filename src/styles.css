@@ -24,7 +24,10 @@ button { color: inherit; }
 .tv-link { width: 100%; height: 40px; margin-top: 8px; padding: 0 13px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #a9a5bb; text-align: left; font-size: 12px; cursor: pointer; }
 .tv-link span { margin-right: 10px; color: #85c9ff; }
 .tv-link:hover { border-color: #303145; background: #151724; color: #e1dded; }
-.side-caption { margin: 33px 0 14px 8px; color: #66677a; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; }
+.side-caption { margin: 20px 0 14px 8px; color: #66677a; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; }
+.account-history { display: grid; max-height: 180px; gap: 3px; overflow-y: auto; margin: 3px 0 8px; }
+.account-chat { width: 100%; overflow: hidden; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: #aaa7ba; text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; cursor: pointer; }
+.account-chat:hover { background: #171824; color: #eee9fa; }
 .side-note { display: flex; gap: 9px; align-items: center; padding: 10px 9px; color: #a8a7b7; font-size: 12px; }
 .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #8bd8a8; box-shadow: 0 0 10px #8bd8a866; }
 .sidebar-bottom { margin-top: auto; }

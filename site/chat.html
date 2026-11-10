@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#080a12" />
+    <meta name="description" content="Converse com Astra no celular e continue suas conversas no computador." />
+    <title>Astra — converse no celular</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./chat.css" />
+    <script src="./chat.js" defer></script>
+  </head>
+  <body>
+    <header class="chat-header">
+      <a class="brand" href="./index.html" aria-label="Voltar ao site da Astra">
+        <img src="./astra-logo.svg" alt="Astra" width="150" height="34" />
+      </a>
+      <a class="back-link" href="./index.html">Site de downloads</a>
+    </header>
+
+    <main>
+      <section class="auth-card" id="auth-view">
+        <div class="mark" aria-hidden="true">A</div>
+        <p class="eyebrow">ASTRA NO CELULAR</p>
+        <h1 id="auth-title">Entre na sua conta</h1>
+        <p class="intro">Suas conversas ficam salvas e aparecem no app Astra para Windows.</p>
+        <form id="auth-form">
+          <label for="api-url">Endereço da API Astra</label>
+          <input id="api-url" type="url" inputmode="url" placeholder="https://api.seu-dominio/v1" autocomplete="url" required />
+          <label for="email">E-mail</label>
+          <input id="email" type="email" autocomplete="email" maxlength="254" required />
+          <label for="password">Senha</label>
+          <input id="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required />
+          <div class="confirm-password" id="confirm-wrap" hidden>
+            <label for="password-confirm">Confirme a senha</label>
+            <input id="password-confirm" type="password" autocomplete="new-password" minlength="12" maxlength="128" />
+          </div>
+          <p class="error" id="auth-error" role="alert"></p>
+          <button class="primary-button" id="auth-submit" type="submit">Entrar</button>
+        </form>
+        <button class="text-button" id="auth-mode" type="button">Ainda não tem conta? Criar conta</button>
+        <p class="footnote">Use o mesmo e-mail e senha no computador. A API precisa estar publicada com HTTPS.</p>
+      </section>
+
+      <section class="chat-shell" id="chat-view" hidden>
+        <aside class="history-panel">
+          <button class="new-chat" id="new-chat" type="button">＋ Nova conversa</button>
+          <p class="history-label">SUAS CONVERSAS</p>
+          <div class="chat-list" id="chat-list" aria-label="Conversas salvas"></div>
+        </aside>
+        <section class="conversation">
+          <header class="conversation-header">
+            <div>
+              <strong>Olá, <span id="account-email"></span></strong>
+              <p>Seu histórico acompanha você no Windows.</p>
+            </div>
+            <button class="text-button logout" id="logout" type="button">Sair</button>
+          </header>
+          <div class="messages" id="messages" aria-live="polite">
+            <div class="empty-state" id="empty-state">
+              <div class="mark" aria-hidden="true">A</div>
+              <h1>Oi, eu sou a Astra.</h1>
+              <p>Comece uma conversa. Ela será salva na sua conta.</p>
+            </div>
+          </div>
+          <form class="composer" id="composer">
+            <textarea id="message-input" rows="1" maxlength="6000" placeholder="Escreva uma mensagem..." aria-label="Escreva uma mensagem"></textarea>
+            <button class="send-button" id="send-button" type="submit" aria-label="Enviar mensagem">↑</button>
+          </form>
+          <p class="disclaimer">Astra pode cometer erros. Confira informações importantes.</p>
+          <p class="error chat-error" id="chat-error" role="alert"></p>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

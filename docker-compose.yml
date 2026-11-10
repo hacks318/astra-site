@@ -13,13 +13,21 @@ services:
     environment:
       PORT: "8080"
       HOST: "0.0.0.0"
+      ASTRA_PROVIDER: ${ASTRA_PROVIDER:-ollama}
       OLLAMA_URL: http://ollama:11434
-      ASTRA_MODEL: qwen2.5:3b
+      ASTRA_MODEL: ${ASTRA_MODEL:-qwen2.5:3b}
       ASTRA_RATE_LIMIT: "8"
+      ASTRA_DATABASE_PATH: /home/node/astra-data/astra.sqlite
+      ASTRA_WEB_ORIGINS: ${ASTRA_WEB_ORIGINS:-https://hacks318.github.io}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
       - ollama
     expose:
       - "8080"
+    volumes:
+      - astra_data:/home/node
 
   caddy:
     image: caddy:2-alpine
@@ -39,5 +47,6 @@ services:
 
 volumes:
   ollama_data:
+  astra_data:
   caddy_data:
   caddy_config:

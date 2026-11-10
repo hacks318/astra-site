@@ -29,6 +29,12 @@ if ! getent ahostsv4 "$domain" >/dev/null; then
 fi
 
 printf 'ASTRA_API_DOMAIN=%s\n' "$domain" > "$project_dir/.env"
+printf 'ASTRA_PROVIDER=%s\n' "${ASTRA_PROVIDER:-ollama}" >> "$project_dir/.env"
+printf 'OPENAI_BASE_URL=%s\n' "${OPENAI_BASE_URL:-https://api.openai.com/v1}" >> "$project_dir/.env"
+printf 'OPENAI_MODEL=%s\n' "${OPENAI_MODEL:-gpt-4o-mini}" >> "$project_dir/.env"
+if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+  printf 'OPENAI_API_KEY=%s\n' "$OPENAI_API_KEY" >> "$project_dir/.env"
+fi
 cd "$project_dir"
 docker compose pull ollama caddy
 docker compose up -d ollama

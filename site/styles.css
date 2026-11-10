@@ -36,6 +36,8 @@ h1 { margin: 0; font-size: clamp(44px, 6vw, 68px); font-weight: 620; letter-spac
 .download-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .version-label { color: #9e9bad; font-size: 11px; }
 .hero-note { margin: 14px 0 0; color: #77788b; font-size: 10px; }
+.web-app-link { display: inline-block; margin-top: 12px; color: #bca3f3; font-size: 11px; text-decoration: underline; text-decoration-color: #bca3f366; text-underline-offset: 3px; }
+.web-app-link:hover { color: #e2d5ff; }
 .hero-art { position: relative; display: grid; width: min(100%, 430px); aspect-ratio: 1; place-items: center; justify-self: center; isolation: isolate; }
 .hero-art::before { position: absolute; inset: 12%; border-radius: 50%; background: #5935a125; content: ""; filter: blur(55px); }
 .core-glow { position: absolute; width: 40%; aspect-ratio: 1; border-radius: 50%; background: #8555fc55; filter: blur(40px); animation: glow 3s ease-in-out infinite alternate; }
@@ -110,6 +112,7 @@ body[data-platform="android"] .windows-download, body[data-platform="android"] .
   .hero { grid-template-columns: 1fr; gap: 4px; padding: 59px 0 35px; }
   .hero-copy { text-align: center; }
   .hero-copy .eyebrow, .hero-actions { justify-content: center; }
+  .hero-copy > .web-app-link { display: block; }
   .hero-description { margin-right: auto; margin-left: auto; font-size: 13px; }
   h1 { font-size: clamp(43px, 12vw, 58px); letter-spacing: -2.8px; }
   .hero-art { width: min(88%, 350px); grid-row: 1; margin-bottom: 4px; }

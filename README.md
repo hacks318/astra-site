@@ -18,9 +18,15 @@ O site estático fica em `site/` e inclui o instalador Windows atual. Para publi
 
 O endereço público só é criado depois que o projeto estiver em um repositório hospedado e o workflow terminar. Um domínio próprio é opcional.
 
+## Conta Astra e conversas sincronizadas
+
+O site móvel em `site/chat.html` e o app Windows podem entrar na mesma conta Astra. Crie a conta no site mobile e informe o mesmo endereço da API e as mesmas credenciais no botão **Entrar e sincronizar** do app Windows. Conversas feitas com a conta conectada ficam salvas na API e aparecem nos dois dispositivos. Sem uma API publicada, o site funciona somente em desenvolvimento/local; conversas sem login continuam apenas no computador.
+
+Publique a API seguindo os passos abaixo antes de criar a conta. O endereço precisa usar HTTPS e terminar em `/v1` (por exemplo, `https://api.seu-dominio.com/v1`). As senhas são armazenadas com hash e salt; tokens de sessão têm validade de 30 dias. Ainda não há confirmação de e-mail nem recuperação de senha, então mantenha a senha em local seguro. O histórico fica no volume Docker `astra_data`; faça backup desse volume junto com os dados do servidor.
+
 ## API própria para os apps móveis
 
-O backend da Astra fica em `api/` e usa um modelo open-source executado pelo Ollama no próprio servidor; ele não envia conversas para uma API de IA de terceiros. O Docker Compose mantém o modelo e a API em containers separados, publica apenas HTTPS pelo Caddy e limita o uso por IP e o número de respostas simultâneas. O modelo inicial é `qwen2.5:3b`, adequado para testar em uma máquina ARM com CPU, mas mais lento que um serviço com GPU.
+O backend da Astra fica em `api/` e usa Ollama por padrão. Opcionalmente, pode encaminhar conversas para a API OpenAI. Nesse modo, `OPENAI_API_KEY` fica somente no ambiente do servidor; nunca coloque essa chave no APK, no site ou no repositório. O Docker Compose publica HTTPS pelo Caddy e limita o uso por IP e o número de respostas simultâneas. Configure também limites de uso e orçamento no projeto OpenAI do servidor.
 
 Para tentar manter a API ligada sem mensalidade, use uma VM elegível ao Oracle Cloud Always Free. A Oracle informa até 2 OCPUs ARM e 12 GB de RAM dentro dos limites gratuitos, sem GPU; o modelo pode responder devagar. Capacidade gratuita não é garantida e a Oracle pode reclamar VMs consideradas ociosas, então isso não garante disponibilidade permanente. O cadastro exige verificação de identidade e cartão; não selecione recursos pagos.
 
@@ -38,6 +44,7 @@ Para tentar manter a API ligada sem mensalidade, use uma VM elegível ao Oracle 
    ```
 
    Troque `<IP-PUBLICO>` pelo IPv4 público real da VM. `nip.io` fornece o DNS gratuito desse endereço; o Caddy configura HTTPS automaticamente.
+5. A API publicada ficará em `https://api.<IP-PUBLICO>.nip.io/v1`. Use esse endereço no site mobile e no app Windows para criar a conta e sincronizar as conversas. Se hospedar o site fora do GitHub Pages padrão, defina `ASTRA_WEB_ORIGINS` no `.env` com a origem exata do site (sem caminho final) e reinicie com `docker compose up -d`.
 
 Se não quiser criar uma conta de nuvem agora, execute `powershell -ExecutionPolicy Bypass -File .\api\start-local.ps1` no Windows da Astra. O celular e o computador devem estar na mesma rede Wi-Fi e o computador precisa permanecer ligado. O app móvel vem configurado para usar `http://192.168.1.3:8080/v1` sem chave; se o IP do computador mudar, atualize-o em **Configurações → Astra**. Essa opção funciona somente na rede local e não mantém a IA acessível quando o PC está desligado.
 
@@ -45,7 +52,7 @@ Se não quiser criar uma conta de nuvem agora, execute `powershell -ExecutionPol
 
 Em **Configurações**, selecione **Neste computador (Ollama)**. O padrão usa `http://127.0.0.1:11434` e o modelo `qwen2.5:3b`. A Astra tenta iniciar o servidor Ollama instalado no Windows se ele não estiver ativo. Use **Testar conexão** para confirmar que o servidor e o modelo estão disponíveis. A conversa é enviada ao Ollama local e não requer chave de API nem um serviço externo.
 
-Também é possível selecionar uma API compatível com OpenAI. Nesse modo, informe o endereço, modelo e chave; a chave é protegida com a criptografia de credenciais do Windows.
+No servidor, configure `ASTRA_PROVIDER=openai`, `OPENAI_MODEL=gpt-4o-mini` e `OPENAI_API_KEY` no arquivo `.env` privado; depois reinicie os containers com `docker compose up -d`. A chave não é enviada ao app. O modo OpenAI só funciona quando o backend HTTPS está publicado e a chave de servidor tem acesso ao modelo selecionado.
 
 As respostas são exibidas em fluxo assim que o modelo as gera. No Ollama, a Astra mantém o modelo aquecido por 10 minutos, limita o contexto recente e pede respostas curtas e organizadas.
 
@@ -63,7 +70,9 @@ Ative **Modo Educação** no topo da janela para receber explicações defensiva
 
 ## Astra para Android
 
-O app Android inclui o provedor **Astra**, que usa a API própria sem pedir chave. Para usar um computador na rede local, informe o endereço HTTP privado e mantenha os aparelhos no mesmo Wi-Fi; para acessar pela internet móvel, informe o endereço HTTPS da API publicada (por exemplo, o domínio configurado no Caddy). HTTP fora de um IPv4 privado é recusado. O provedor, endereço e modelo ficam salvos no celular; também é possível escolher Ollama ou uma API compatível. O histórico da conversa não é persistido.
+O app Android inclui o provedor **Astra**, que usa o backend sem pedir nem armazenar uma chave OpenAI. Para usar um computador na rede local, informe o endereço HTTP privado e mantenha os aparelhos no mesmo Wi-Fi; para acessar pela internet móvel, use o endereço HTTPS do backend publicado. HTTP fora de um IPv4 privado é recusado. Também é possível escolher Ollama na rede local. O histórico da conversa não é persistido. Para preencher automaticamente o endereço HTTPS no APK distribuído, defina a variável de repositório `ASTRA_API_BASE_URL` no GitHub (por exemplo, `https://api.seu-dominio/v1`) antes de executar o workflow Android; essa URL não é secreta.
+
+O site escolhe o arquivo Android pelo tipo de dispositivo informado pelo navegador. Isso distingue Android de Windows, mas não identifica individualmente quem baixou; o site estático não cria contas nem rastreia pessoas. A chave OpenAI não pode ser criada e embutida no celular com segurança: todas as instalações Android usam a mesma API do servidor, que protege a credencial e precisa ter limites de orçamento e uso configurados.
 
 O workflow **Build Astra Android APK** compila o projeto no GitHub Actions, publica o APK de depuração como artefato da execução e atualiza o download Android no GitHub Pages. O APK de depuração serve para testes; uma versão assinada para distribuição pública requer uma chave de assinatura de lançamento protegida.
 

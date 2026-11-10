@@ -452,6 +452,139 @@ ipcMain.handle("settings:get", () => {
   return getPublicSettings(readSettings());
 });
 
+function getAccountSettings(settings = readSettings()) {
+  if (!settings.account || !settings.account.encryptedToken) return null;
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("A proteção da conta no Windows não está disponível.");
+  }
+  return {
+    apiBase: settings.account.apiBase,
+    email: settings.account.email,
+    token: safeStorage.decryptString(Buffer.from(settings.account.encryptedToken, "base64"))
+  };
+}
+
+function validateAccountApiBase(value) {
+  let parsed;
+  try {
+    parsed = new URL(String(value || "").trim());
+  } catch {
+    throw new Error("Informe o endereço da API Astra.");
+  }
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error("O endereço da API precisa usar HTTP ou HTTPS.");
+  }
+  if (parsed.protocol === "http:" && !["localhost", "127.0.0.1", "::1"].includes(parsed.hostname)) {
+    throw new Error("Para uma API publicada, use HTTPS.");
+  }
+  return parsed.href.replace(/\/+$/, "");
+}
+
+async function accountRequest(account, route, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${account.apiBase}${route}`, {
+      method: options.method || "GET",
+      headers: {
+        Authorization: `Bearer ${account.token}`,
+        ...(options.body === undefined ? {} : { "Content-Type": "application/json" })
+      },
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: AbortSignal.timeout(30_000)
+    });
+  } catch (error) {
+    throw new Error(`Não foi possível conectar à API Astra: ${error.message}`);
+  }
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("A API Astra retornou uma resposta inválida.");
+  }
+  if (!response.ok) throw new Error(result.error || `A API Astra respondeu ${response.status}.`);
+  return result;
+}
+
+ipcMain.handle("account:get", () => {
+  const account = getAccountSettings();
+  return account ? { email: account.email } : null;
+});
+
+ipcMain.handle("account:authenticate", async (event, input) => {
+  requireMainAppEvent(event);
+  const apiBase = validateAccountApiBase(input.apiBase);
+  const email = String(input.email || "").trim().toLowerCase();
+  const password = String(input.password || "");
+  const route = input.registering === true ? "/auth/register" : "/auth/login";
+  let response;
+  try {
+    response = await fetch(`${apiBase}${route}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      signal: AbortSignal.timeout(30_000)
+    });
+  } catch (error) {
+    throw new Error(`Não foi possível conectar à API Astra: ${error.message}`);
+  }
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("A API Astra retornou uma resposta inválida.");
+  }
+  if (!response.ok) throw new Error(result.error || `A API Astra respondeu ${response.status}.`);
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("A proteção da conta no Windows não está disponível.");
+  }
+  const settings = readSettings();
+  settings.account = {
+    apiBase,
+    email: result.user.email,
+    encryptedToken: safeStorage.encryptString(result.token).toString("base64")
+  };
+  writeSettings(settings);
+  return { email: result.user.email };
+});
+
+ipcMain.handle("account:logout", (event) => {
+  requireMainAppEvent(event);
+  const settings = readSettings();
+  delete settings.account;
+  writeSettings(settings);
+  return true;
+});
+
+ipcMain.handle("account:list", async (event) => {
+  requireMainAppEvent(event);
+  const account = getAccountSettings();
+  if (!account) throw new Error("Entre na sua conta para acessar as conversas.");
+  return (await accountRequest(account, "/chats")).chats;
+});
+
+ipcMain.handle("account:load-chat", async (event, chatId) => {
+  requireMainAppEvent(event);
+  const account = getAccountSettings();
+  if (!account) throw new Error("Entre na sua conta para acessar as conversas.");
+  return (await accountRequest(account, `/chats/${encodeURIComponent(String(chatId))}`)).chat;
+});
+
+ipcMain.handle("account:save-chat", async (event, input) => {
+  requireMainAppEvent(event);
+  const account = getAccountSettings();
+  if (!account) throw new Error("Entre na sua conta para salvar as conversas.");
+  let chatId = String(input.chatId || "");
+  if (!chatId) {
+    const result = await accountRequest(account, "/chats", { method: "POST", body: {} });
+    chatId = result.chat.id;
+  }
+  const result = await accountRequest(account, `/chats/${encodeURIComponent(chatId)}`, {
+    method: "PUT",
+    body: { messages: input.messages }
+  });
+  return result.chat;
+});
+
 ipcMain.handle("settings:save", (_event, input) => {
   const current = readSettings();
   const provider = input.provider === "openai" ? "openai" : "ollama";

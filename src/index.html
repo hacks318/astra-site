@@ -18,6 +18,8 @@
           <span>astra<span class="brand-dot">.</span></span>
         </a>
         <button class="new-chat" id="new-chat"><span>＋</span> Nova conversa</button>
+        <button class="tv-link account-link" id="open-account" type="button"><span>◎</span><span id="account-label">Entrar e sincronizar</span></button>
+        <div class="account-history" id="account-history" hidden></div>
         <button class="tv-link" id="open-tv"><span>▣</span> Conectar à TV</button>
         <div class="side-caption">ASSISTENTE PESSOAL</div>
         <div class="side-note">
@@ -119,6 +121,28 @@
           <div class="settings-actions">
             <button class="test-connection" id="test-connection" type="button">Testar conexão</button>
             <button class="save-settings" type="submit">Salvar configurações</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="account-modal" role="presentation">
+      <section class="settings-card" role="dialog" aria-modal="true" aria-labelledby="account-title">
+        <button class="modal-close" id="close-account" type="button" aria-label="Fechar">×</button>
+        <p class="eyebrow">CONVERSAS EM TODOS OS SEUS DISPOSITIVOS</p>
+        <h2 id="account-title">Entrar na sua conta Astra</h2>
+        <p class="settings-description">Use o mesmo e-mail e senha do site mobile para sincronizar suas conversas.</p>
+        <form id="account-form">
+          <label for="account-api">Endereço da API Astra</label>
+          <input id="account-api" type="url" placeholder="https://api.seu-dominio/v1" required />
+          <label for="account-email">E-mail</label>
+          <input id="account-email" type="email" autocomplete="email" required />
+          <label for="account-password">Senha (mínimo 12 caracteres)</label>
+          <input id="account-password" type="password" minlength="12" maxlength="128" autocomplete="current-password" required />
+          <p class="settings-error" id="account-error" role="alert"></p>
+          <div class="settings-actions">
+            <button class="test-connection" id="account-mode" type="button">Criar conta</button>
+            <button class="save-settings" id="account-submit" type="submit">Entrar</button>
           </div>
         </form>
       </section>

@@ -5,6 +5,12 @@ let nextRequestId = 0;
 contextBridge.exposeInMainWorld("astra", {
   getSettings: () => ipcRenderer.invoke("settings:get"),
   saveSettings: (settings) => ipcRenderer.invoke("settings:save", settings),
+  getAccount: () => ipcRenderer.invoke("account:get"),
+  authenticateAccount: (credentials) => ipcRenderer.invoke("account:authenticate", credentials),
+  logoutAccount: () => ipcRenderer.invoke("account:logout"),
+  listAccountChats: () => ipcRenderer.invoke("account:list"),
+  loadAccountChat: (chatId) => ipcRenderer.invoke("account:load-chat", chatId),
+  saveAccountChat: (chat) => ipcRenderer.invoke("account:save-chat", chat),
   allowMicrophone: () => ipcRenderer.invoke("microphone:consent"),
   revokeMicrophone: () => ipcRenderer.invoke("microphone:revoke-consent"),
   testOllama: (settings) => ipcRenderer.invoke("ollama:test", settings),

@@ -28,7 +28,16 @@ const tvDevices = document.getElementById("tv-devices");
 const tvControls = document.getElementById("tv-controls");
 const tvSelection = document.getElementById("tv-selected");
 const tvAppsSelect = document.getElementById("tv-apps");
+const accountModal = document.getElementById("account-modal");
+const accountForm = document.getElementById("account-form");
+const accountError = document.getElementById("account-error");
+const accountSubmit = document.getElementById("account-submit");
+const accountModeButton = document.getElementById("account-mode");
+const accountLabel = document.getElementById("account-label");
+const accountHistory = document.getElementById("account-history");
 const history = [];
+let activeAccountChatId = "";
+let accountRegistering = false;
 let pairedTVs = [];
 let pairedTVApps = [];
 let activeTVHost = "";
@@ -248,6 +257,16 @@ function showConversation() {
   messagesElement.classList.add("active");
 }
 
+async function syncAccountConversation() {
+  if (!(await window.astra.getAccount())) return;
+  const saved = await window.astra.saveAccountChat({
+    chatId: activeAccountChatId,
+    messages: history
+  });
+  activeAccountChatId = saved.id;
+  await refreshAccountChats();
+}
+
 async function sendMessage(value) {
   const content = value.trim();
   if (!content || isSending) return;
@@ -281,6 +300,11 @@ async function sendMessage(value) {
     typing.remove();
     history.push({ role: "assistant", content: reply });
     appendMessage("assistant", reply);
+    try {
+      await syncAccountConversation();
+    } catch (syncError) {
+      appendMessage("assistant", `Não foi possível sincronizar esta conversa: ${syncError.message}`);
+    }
     setState("speaking", "A Astra está respondendo");
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(reply);
@@ -295,6 +319,11 @@ async function sendMessage(value) {
   } catch (error) {
     typing.remove();
     appendMessage("assistant", `Não consegui responder: ${error.message}`);
+    try {
+      await syncAccountConversation();
+    } catch (syncError) {
+      appendMessage("assistant", `Não foi possível salvar esta conversa: ${syncError.message}`);
+    }
     setState("idle", "Pronta para conversar");
   } finally {
     isSending = false;
@@ -400,6 +429,7 @@ input.addEventListener("keydown", (event) => {
 });
 
 document.getElementById("new-chat").addEventListener("click", () => {
+  activeAccountChatId = "";
   history.length = 0;
   messagesElement.replaceChildren();
   messagesElement.classList.remove("active");
@@ -407,6 +437,109 @@ document.getElementById("new-chat").addEventListener("click", () => {
   welcome.hidden = false;
   window.speechSynthesis?.cancel();
   setState("idle", "Pronta para conversar");
+});
+
+function renderAccountChats(chats) {
+  accountHistory.replaceChildren();
+  accountHistory.hidden = chats.length === 0;
+  for (const chat of chats) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "account-chat";
+    button.textContent = chat.title;
+    button.title = chat.title;
+    button.addEventListener("click", async () => {
+      try {
+        const selected = await window.astra.loadAccountChat(chat.id);
+        activeAccountChatId = selected.id;
+        history.splice(0, history.length, ...selected.messages);
+        messagesElement.replaceChildren();
+        for (const message of history) appendMessage(message.role, message.content);
+        showConversation();
+        setState("idle", "Conversa sincronizada");
+      } catch (error) {
+        appendMessage("assistant", `Não foi possível abrir a conversa: ${error.message}`);
+      }
+    });
+    accountHistory.append(button);
+  }
+}
+
+async function refreshAccountChats() {
+  const chats = await window.astra.listAccountChats();
+  renderAccountChats(chats);
+}
+
+function setAccountMode(registering) {
+  accountRegistering = registering;
+  document.getElementById("account-title").textContent = registering
+    ? "Criar conta Astra"
+    : "Entrar na sua conta Astra";
+  accountSubmit.textContent = registering ? "Criar conta" : "Entrar";
+  accountModeButton.textContent = registering ? "Já tenho conta" : "Criar conta";
+  document.getElementById("account-password").autocomplete = registering
+    ? "new-password"
+    : "current-password";
+  accountError.textContent = "";
+}
+
+document.getElementById("open-account").addEventListener("click", async () => {
+  const account = await window.astra.getAccount();
+  if (account) {
+    try {
+      await window.astra.logoutAccount();
+      accountLabel.textContent = "Entrar e sincronizar";
+      accountHistory.replaceChildren();
+      accountHistory.hidden = true;
+      activeAccountChatId = "";
+      setState("idle", "Saiu da conta Astra");
+    } catch (error) {
+      appendMessage("assistant", `Não foi possível sair da conta: ${error.message}`);
+    }
+    return;
+  }
+  accountError.textContent = "";
+  setAccountMode(false);
+  accountModal.classList.remove("hidden");
+  document.getElementById("account-email").focus();
+});
+
+document.getElementById("close-account").addEventListener("click", () => {
+  accountModal.classList.add("hidden");
+});
+accountModal.addEventListener("click", (event) => {
+  if (event.target === accountModal) accountModal.classList.add("hidden");
+});
+accountModeButton.addEventListener("click", () => setAccountMode(!accountRegistering));
+accountForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  accountSubmit.disabled = true;
+  accountError.textContent = "";
+  try {
+    const account = await window.astra.authenticateAccount({
+      apiBase: document.getElementById("account-api").value,
+      email: document.getElementById("account-email").value,
+      password: document.getElementById("account-password").value,
+      registering: accountRegistering
+    });
+    accountLabel.textContent = account.email;
+    document.getElementById("account-password").value = "";
+    accountModal.classList.add("hidden");
+    await refreshAccountChats();
+    setState("idle", "Conversas sincronizadas");
+  } catch (error) {
+    accountError.textContent = error.message;
+  } finally {
+    accountSubmit.disabled = false;
+  }
+});
+
+window.astra.getAccount().then(async (account) => {
+  if (!account) return;
+  accountLabel.textContent = account.email;
+  await refreshAccountChats();
+}).catch((error) => {
+  appendMessage("assistant", `Não foi possível carregar as conversas sincronizadas: ${error.message}`);
 });
 
 document.querySelectorAll(".suggestion").forEach((button) => {
