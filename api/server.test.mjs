@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createAstraApi } from "./server.mjs";
 
 let server;
@@ -29,6 +32,35 @@ test("health reports whether the local model server is available", async () => {
   const response = await fetch(`${baseUrl}/health`);
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { status: "ok", model: "test-model" });
+});
+
+test("the API host serves its website from the configured site directory", async () => {
+  const siteDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "astra-site-"));
+  fs.writeFileSync(path.join(siteDirectory, "index.html"), "<h1>Astra</h1>");
+  fs.writeFileSync(path.join(siteDirectory, "chat.html"), "<h1>Chat</h1>");
+  const siteServer = createAstraApi({
+    databasePath: ":memory:",
+    siteDirectory,
+    fetchImpl: async () => Response.json({ models: [] })
+  });
+  await new Promise((resolve) => siteServer.listen(0, "127.0.0.1", resolve));
+  const siteUrl = `http://127.0.0.1:${siteServer.address().port}`;
+
+  try {
+    const home = await fetch(siteUrl);
+    assert.equal(home.status, 200);
+    assert.match(home.headers.get("content-type"), /text\/html/);
+    assert.equal(await home.text(), "<h1>Astra</h1>");
+    const chat = await fetch(`${siteUrl}/chat.html`);
+    assert.equal(chat.status, 200);
+    assert.equal(await chat.text(), "<h1>Chat</h1>");
+    assert.equal((await fetch(`${siteUrl}/missing.html`)).status, 404);
+  } finally {
+    await new Promise((resolve, reject) => {
+      siteServer.close((error) => error ? reject(error) : resolve());
+    });
+    fs.rmSync(siteDirectory, { recursive: true, force: true });
+  }
 });
 
 test("accounts can sign in on another device and retrieve only their saved conversations", async () => {

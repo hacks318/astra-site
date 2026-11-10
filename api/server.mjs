@@ -17,6 +17,19 @@ const WINDOW_MS = 60_000;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_SAVED_MESSAGES = 200;
 const MAX_SAVED_CHARS = 200_000;
+const STATIC_CONTENT_TYPES = new Map([
+  [".apk", "application/vnd.android.package-archive"],
+  [".blockmap", "application/json"],
+  [".css", "text/css; charset=utf-8"],
+  [".exe", "application/octet-stream"],
+  [".html", "text/html; charset=utf-8"],
+  [".ico", "image/x-icon"],
+  [".js", "text/javascript; charset=utf-8"],
+  [".json", "application/json; charset=utf-8"],
+  [".svg", "image/svg+xml"],
+  [".webmanifest", "application/manifest+json"],
+  [".yml", "text/yaml; charset=utf-8"]
+]);
 
 function jsonResponse(response, status, payload) {
   response.writeHead(status, {
@@ -185,6 +198,64 @@ function validateSavedMessages(input) {
   return messages;
 }
 
+function serveStaticFile(request, response, siteDirectory) {
+  if (!siteDirectory || !["GET", "HEAD"].includes(request.method)) return false;
+  const rawPath = request.url.split("?")[0];
+  let pathname;
+  try {
+    pathname = decodeURIComponent(rawPath);
+  } catch {
+    jsonResponse(response, 400, { error: "Endereço de arquivo inválido." });
+    return true;
+  }
+  const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
+  const filePath = path.resolve(siteDirectory, relativePath);
+  if (filePath !== siteDirectory && !filePath.startsWith(`${siteDirectory}${path.sep}`)) {
+    jsonResponse(response, 404, { error: "Arquivo não encontrado." });
+    return true;
+  }
+
+  let fileStat;
+  try {
+    const resolvedPath = fs.realpathSync(filePath);
+    if (resolvedPath !== siteDirectory && !resolvedPath.startsWith(`${siteDirectory}${path.sep}`)) {
+      jsonResponse(response, 404, { error: "Arquivo não encontrado." });
+      return true;
+    }
+    fileStat = fs.statSync(resolvedPath);
+    if (!fileStat.isFile()) return false;
+  } catch (error) {
+    if (error.code === "ENOENT" || error.code === "ENOTDIR") return false;
+    throw error;
+  }
+
+  const contentType = STATIC_CONTENT_TYPES.get(path.extname(filePath).toLowerCase()) ||
+    "application/octet-stream";
+  const headers = {
+    "Cache-Control": contentType.startsWith("text/html") ? "no-cache" : "public, max-age=300",
+    "Content-Length": fileStat.size,
+    "Content-Type": contentType,
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  };
+  if (request.method === "HEAD") {
+    response.writeHead(200, headers);
+    response.end();
+    return true;
+  }
+
+  const stream = fs.createReadStream(filePath);
+  stream.on("error", (error) => {
+    console.error(`Não foi possível servir ${pathname}: ${error.message}`);
+    if (!response.headersSent) jsonResponse(response, 500, { error: "Não foi possível abrir o arquivo." });
+    else response.destroy(error);
+  });
+  response.writeHead(200, headers);
+  stream.pipe(response);
+  return true;
+}
+
 export function createAstraApi({
   ollamaUrl = process.env.OLLAMA_URL || "http://ollama:11434",
   model = process.env.ASTRA_MODEL || "qwen2.5:3b",
@@ -194,12 +265,14 @@ export function createAstraApi({
   openAiBaseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, ""),
   openAiApiKey = process.env.OPENAI_API_KEY || "",
   databasePath = process.env.ASTRA_DATABASE_PATH || path.join(process.env.ASTRA_DATA_DIR || "data", "astra.sqlite"),
+  siteDirectory = process.env.ASTRA_SITE_DIR || "",
   webOrigins = (process.env.ASTRA_WEB_ORIGINS || "https://hacks318.github.io,http://localhost:3000,http://127.0.0.1:5500")
     .split(",").map((origin) => origin.trim()).filter(Boolean)
 } = {}) {
   const allowRequest = createRateLimiter({ limit: rateLimit });
   const allowAccountRequest = createRateLimiter({ limit: 6, windowMs: 15 * 60_000 });
   const database = createAccountStore(databasePath);
+  const resolvedSiteDirectory = siteDirectory ? fs.realpathSync(siteDirectory) : "";
   let activeRequests = 0;
 
   function setCorsHeaders(request, response) {
@@ -465,6 +538,13 @@ export function createAstraApi({
     } catch (error) {
       const status = Number.isInteger(error.statusCode) ? error.statusCode : 400;
       jsonResponse(response, status, { error: error.message || "Não foi possível processar a solicitação." });
+      return;
+    }
+    try {
+      if (serveStaticFile(request, response, resolvedSiteDirectory)) return;
+    } catch (error) {
+      console.error(`Não foi possível servir o site: ${error.message}`);
+      jsonResponse(response, 500, { error: "Não foi possível servir o site." });
       return;
     }
     if (request.method === "GET" && request.url === "/health") {

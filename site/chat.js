@@ -21,7 +21,10 @@ const chatList = document.getElementById("chat-list");
 let isRegistering = false;
 let isSending = false;
 let token = localStorage.getItem("astra-account-token") || "";
-let apiBase = localStorage.getItem("astra-account-api") || "";
+const defaultApiBase = location.hostname.endsWith(".github.io")
+  ? ""
+  : `${location.origin}/v1`;
+let apiBase = localStorage.getItem("astra-account-api") || defaultApiBase;
 let activeChatId = "";
 let history = [];
 let currentUser = null;
