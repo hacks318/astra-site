@@ -20,7 +20,7 @@ No servidor próprio, abra `https://<dominio-da-api>/` para downloads e `https:/
 
 ## Astra no navegador
 
-O chat web (`site/chat.html`) executa um modelo quantizado de IA no próprio navegador usando WebGPU quando disponível, sem login, chave de API ou servidor de inferência. Na primeira mensagem, o navegador baixa o modelo do Hugging Face (aproximadamente 500 MB com WebGPU ou 800 MB com CPU) e pode armazená-lo em cache. A conversa fica salva apenas no armazenamento local desse navegador e não é sincronizada com o Windows. A velocidade e a disponibilidade dependem do aparelho e do suporte a WebGPU; o modelo compacto pode errar.
+O chat web (`site/chat.html`) executa um modelo quantizado de IA no próprio navegador usando WebGPU quando disponível, sem login, chave de API ou servidor de inferência. Na primeira mensagem, o navegador baixa o modelo do Hugging Face (aproximadamente 1,2 GB com WebGPU ou 1,8 GB com CPU) e pode armazená-lo em cache. A conversa fica salva apenas no armazenamento local desse navegador e não é sincronizada com o Windows. A velocidade e a disponibilidade dependem do aparelho e do suporte a WebGPU; o modelo compacto pode errar.
 
 ## Conta Windows e conversas sincronizadas
 

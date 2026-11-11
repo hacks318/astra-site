@@ -1,8 +1,8 @@
 import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/+esm";
 
-const MODEL_ID = "onnx-community/Qwen2.5-0.5B-Instruct";
+const MODEL_ID = "onnx-community/Qwen2.5-1.5B-Instruct";
 const SYSTEM_PROMPT =
-  "Você é Astra, uma assistente prestativa e acolhedora. Responda em português brasileiro, com clareza, sem inventar detalhes e de forma concisa. Se não souber, diga que não sabe.";
+  "Você é Astra, uma assistente prestativa e acolhedora. Responda em português brasileiro, com clareza e diretamente à pergunta mais recente. Não repita respostas anteriores nem invente detalhes. Se não souber, diga que não sabe.";
 let generatorPromise;
 
 env.allowLocalModels = false;
@@ -34,7 +34,7 @@ async function loadGenerator(onStatus) {
       }
 
       if (adapter) {
-        onStatus("Baixando o modelo local com aceleração gráfica (cerca de 500 MB)...");
+        onStatus("Baixando o modelo local com aceleração gráfica (cerca de 1,2 GB)...");
         try {
           return await createGenerator("webgpu", "q4f16", onStatus);
         } catch {
@@ -43,7 +43,7 @@ async function loadGenerator(onStatus) {
         }
       }
 
-      onStatus("Baixando o modelo local para o processador (cerca de 800 MB)...");
+      onStatus("Baixando o modelo local para o processador (cerca de 1,8 GB)...");
       return createGenerator("wasm", "q4", onStatus);
     })().catch((error) => {
       generatorPromise = undefined;
@@ -59,16 +59,13 @@ export async function generateLocalReply(messages, onStatus = () => {}) {
   const output = await generator(
     [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
     {
-      max_new_tokens: 120,
-      do_sample: true,
-      temperature: 0.7,
-      top_p: 0.9,
-      repetition_penalty: 1.1
+      max_new_tokens: 96,
+      do_sample: false
     }
   );
   const generated = output?.[0]?.generated_text;
   const response = Array.isArray(generated)
-    ? generated.at(-1)?.content
+    ? [...generated].reverse().find((message) => message.role === "assistant")?.content
     : typeof generated === "string"
       ? generated
       : "";
