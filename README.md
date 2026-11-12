@@ -16,15 +16,15 @@ O script instala as dependências, gera o instalador e abre o assistente de inst
 
 O site fica em `site/`. O GitHub Pages publica a versão estática para downloads; a implantação da API também serve esse mesmo site no endereço do seu servidor, com a página mobile e a API no mesmo domínio.
 
-No servidor próprio, abra `https://<dominio-da-api>/` para downloads e `https://<dominio-da-api>/chat.html` para conversar no celular.
+No servidor próprio, abra `https://<dominio-da-api>/` para downloads e `https://<dominio-da-api>/chat.html` para conversar no navegador usando a API Astra, sem baixar um modelo para o dispositivo.
 
 ## Astra no navegador
 
-O chat web (`site/chat.html`) executa um modelo quantizado de IA no próprio navegador usando WebGPU quando disponível, sem login, chave de API ou servidor de inferência. Na primeira mensagem, o navegador baixa o modelo do Hugging Face (aproximadamente 1,2 GB com WebGPU ou 1,8 GB com CPU) e pode armazená-lo em cache. A conversa fica salva apenas no armazenamento local desse navegador e não é sincronizada com o Windows. A velocidade e a disponibilidade dependem do aparelho e do suporte a WebGPU; o modelo compacto pode errar.
+O chat web (`site/chat.html`) usa a API Astra configurada, sem baixar modelos para o navegador. No site servido pela API própria, a conexão usa o mesmo servidor automaticamente. Para habilitar o chat no GitHub Pages, configure a variável de repositório `ASTRA_API_BASE_URL` com o endereço público da API e publique novamente o site. As mensagens são enviadas a essa API; o histórico fica salvo somente no armazenamento local do navegador e não é sincronizado com os apps.
 
 ## Conta Windows e conversas sincronizadas
 
-O login e o histórico sincronizado no app Windows continuam disponíveis quando você hospeda a API própria abaixo. Use o mesmo endereço da API e as mesmas credenciais nos computadores Windows. O chat do navegador é independente e mantém conversas somente no aparelho; não compartilha o login ou o histórico com o Windows.
+O login e o histórico sincronizado no app Windows continuam disponíveis quando você hospeda a API própria abaixo. Use o mesmo endereço da API e as mesmas credenciais nos computadores Windows. O chat do navegador não exige conta e mantém o histórico somente neste navegador; não compartilha o login ou as conversas com os apps.
 
 ## API própria para os apps móveis
 
@@ -48,7 +48,7 @@ Para tentar manter a API ligada sem mensalidade, use uma VM elegível ao Oracle 
    Troque `<IP-PUBLICO>` pelo IPv4 público real da VM. `nip.io` fornece o DNS gratuito desse endereço; o Caddy configura HTTPS automaticamente.
 5. O site com a API ficará em `https://api.<IP-PUBLICO>.nip.io/`; abra `/chat.html` no celular. No Windows, informe `https://api.<IP-PUBLICO>.nip.io/v1`. Crie a conta em qualquer um dos apps e use as mesmas credenciais no outro.
 
-Se não quiser criar uma conta de nuvem agora, execute `powershell -ExecutionPolicy Bypass -File .\api\start-local.ps1` no Windows da Astra. O celular e o computador devem estar na mesma rede Wi-Fi e o computador precisa permanecer ligado. O app móvel vem configurado para usar `http://192.168.1.3:8080/v1` sem chave; se o IP do computador mudar, atualize-o em **Configurações → Astra**. Essa opção funciona somente na rede local e não mantém a IA acessível quando o PC está desligado.
+Para usar o chat do site com Ollama sem baixar o modelo no navegador, execute `powershell -ExecutionPolicy Bypass -File .\api\start-local.ps1` no Windows da Astra. O Node.js inicia a API e serve o site no mesmo endereço; se necessário, o script baixa o modelo `qwen2.5:3b` uma vez para o computador. As mensagens são processadas pela API local. Abra no celular o endereço `http://<IP-DO-COMPUTADOR>:8080/chat.html` que o script mostrar. O celular e o computador precisam estar na mesma rede Wi-Fi, e o computador deve permanecer ligado. No app Android, use **Configurações → Astra** e informe o endereço de API mostrado pelo script (terminado em `/v1`). Essa opção funciona somente na rede local.
 
 ## Usar a IA local
 

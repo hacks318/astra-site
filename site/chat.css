@@ -54,6 +54,20 @@ input:focus, textarea:focus { border-color: #9c7adc; box-shadow: 0 0 0 3px #a47b
 .empty-state p { color: var(--muted); font-size: 12px; }
 .message { width: fit-content; max-width: 90%; padding: 10px 13px; border: 1px solid #292838; border-radius: 5px 12px 12px; background: #14151f; color: #dfdce9; font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 .message.user { align-self: flex-end; border-color: #353047; border-radius: 12px 5px 12px 12px; background: #1c1a29; }
+.message.assistant { max-width: min(94%, 850px); }
+.message.assistant > :first-child { margin-top: 0; }
+.message.assistant > :last-child { margin-bottom: 0; }
+.message.assistant p { margin: 0 0 10px; white-space: normal; }
+.message.assistant h2, .message.assistant h3, .message.assistant h4 { margin: 16px 0 7px; color: #f4f0ff; line-height: 1.35; }
+.message.assistant h2 { font-size: 16px; }
+.message.assistant h3, .message.assistant h4 { font-size: 14px; }
+.message.assistant ul, .message.assistant ol { margin: 0 0 11px; padding-left: 22px; white-space: normal; }
+.message.assistant li { padding-left: 3px; }
+.message.assistant li + li { margin-top: 4px; }
+.message.assistant pre { overflow-x: auto; margin: 10px 0; padding: 12px; border: 1px solid #343346; border-radius: 8px; background: #090a11; white-space: pre; }
+.message.assistant pre code { color: #d8caff; font-family: Consolas, monospace; font-size: 12px; }
+.message.assistant p code, .message.assistant li code { padding: 2px 5px; border-radius: 4px; background: #252333; color: #d8caff; font-family: Consolas, monospace; font-size: .92em; }
+.message.assistant a { color: #c5a9ff; text-decoration: underline; text-underline-offset: 2px; }
 .composer { display: flex; width: min(760px, calc(100% - 40px)); align-items: flex-end; gap: 9px; margin: 0 auto; padding: 8px; border: 1px solid #343346; border-radius: 12px; background: #11121c; }
 .composer textarea { min-height: 42px; max-height: 130px; resize: none; border: 0; background: transparent; line-height: 1.5; }
 .composer textarea:focus { border: 0; box-shadow: none; }

@@ -4,15 +4,16 @@
     <meta charset="UTF-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self'; connect-src 'self' https://cdn.jsdelivr.net https://huggingface.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.hf.co https://us.aws.cdn.hf.co https://cas-bridge.xethub.hf.co https://*.xethub.hf.co; img-src 'self' data:; object-src 'none'; base-uri 'self'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https:; img-src 'self' data:; object-src 'none'; base-uri 'self'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#080a12" />
-    <meta name="description" content="Converse com Astra no celular. A IA funciona no seu próprio aparelho." />
+    <meta name="description" content="Converse com Astra no navegador usando a API Astra." />
     <title>Astra — converse no celular</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./chat.css" />
-    <script src="./chat.js" defer></script>
+    <script src="./runtime-config.js"></script>
+    <script src="./chat.js?v=20261112-1" defer></script>
   </head>
   <body>
     <header class="chat-header">
@@ -26,22 +27,22 @@
       <section class="chat-shell">
         <aside class="history-panel">
           <button class="new-chat" id="new-chat" type="button">＋ Nova conversa</button>
-          <p class="history-label">SUAS CONVERSAS NESTE APARELHO</p>
+          <p class="history-label">CONVERSAS NESTE NAVEGADOR</p>
           <div class="chat-list" id="chat-list" aria-label="Conversas salvas neste aparelho"></div>
         </aside>
         <section class="conversation">
           <header class="conversation-header">
             <div>
               <strong>Oi, eu sou a Astra.</strong>
-              <p id="model-status" role="status" aria-live="polite">A IA roda neste aparelho; suas mensagens não saem dele.</p>
+              <p id="model-status" role="status" aria-live="polite">Conectando à IA Astra...</p>
             </div>
-            <span class="local-badge">IA LOCAL</span>
+            <span class="local-badge">IA ASTRA</span>
           </header>
           <div class="messages" id="messages" aria-live="polite">
             <div class="empty-state" id="empty-state">
               <div class="mark" aria-hidden="true">A</div>
               <h1>Converse com a Astra.</h1>
-              <p>Na primeira mensagem, o navegador baixa o modelo de IA (cerca de 1,2–1,8 GB, conforme o aparelho). Depois ele pode ficar em cache e gerar respostas sem conta; o modelo roda neste aparelho.</p>
+              <p>Converse com a IA pelo servidor Astra, sem baixar modelos para o navegador. Suas mensagens são enviadas à API configurada; o histórico fica salvo somente neste navegador.</p>
             </div>
           </div>
           <form class="composer" id="composer">

@@ -23,6 +23,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      ASTRA_API_BASE_URL: ${{ vars.ASTRA_API_BASE_URL }}
     steps:
       - name: Check out site
         uses: actions/checkout@v4
@@ -31,6 +33,10 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
+      - name: Configure Astra API endpoint
+        run: |
+          node -e 'const fs = require("node:fs"); fs.writeFileSync("site/runtime-config.js", `window.ASTRA_API_BASE_URL = ${JSON.stringify(process.env.ASTRA_API_BASE_URL || "")};\nwindow.ASTRA_API_BASE_URL_REQUIRED = true;\n`);'
 
       - name: Upload site files
         uses: actions/upload-pages-artifact@v3
